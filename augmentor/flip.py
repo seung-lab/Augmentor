@@ -29,10 +29,10 @@ class Flip(Augment):
         return format_string
 
 
-# Predefined ``Flip``s along the z, y, and x-directions.
-flip_z = Flip(axis=-1)
+# Predefined ``Flip``s along the x, y, and z-directions.
+flip_x = Flip(axis=-1)
 flip_y = Flip(axis=-2)
-flip_x = Flip(axis=-3)
+flip_z = Flip(axis=-3)
 
 
 class Transpose(Augment):
@@ -75,7 +75,7 @@ flip = Compose([flip_z, flip_y, flip_x, transpose_xy])
 if __name__ == "__main__":
 
     sample = dict(image=np.arange(8).reshape(2,2,2))
-    print(sample)
+    print('sample = {}'.format(sample))
 
     print(Flip(axis=-1, prob=1)(sample))
     print(Flip(axis=-2, prob=1)(sample))
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     print(Transpose(axes=[0,1,3,2], prob=1)(sample))
 
     sample = dict(image=np.arange(8).reshape(2,2,2))
-    print(sample)
+    print('sample = {}'.format(sample))
 
     print(flip(sample))
     print(flip(sample))

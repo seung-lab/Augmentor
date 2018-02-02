@@ -39,6 +39,13 @@ class Augment(object):
         assert data.ndim==4
         return data
 
+    @staticmethod
+    def get_spec(sample):
+        """Extract spec from sample."""
+        spec = dict()
+        for k, v in sample.items():
+            spec[k] = v.shape[-3:]
+        return spec
 
 
 class Compose(Augment):
@@ -77,3 +84,41 @@ class Compose(Augment):
             format_string += '    {0}'.format(aug)
         format_string += '\n)'
         return format_string
+
+
+class Blend(Augment):
+    """Blends several augments together.
+
+    Args:
+        augments (list of ``Augment`` objects): List of augments to blend.
+        props (list of floats, optional): Blending proportions.
+    """
+    def __init__(self, augments, props=None):
+        self.augments = augments
+        self.props = [1.0]*len(augments) if props is None else props
+        self.props /= np.sum(self.props)  # Normalize.
+        assert len(self.augments)==len(self.props)
+        self.aug = None
+
+    def __call__(self, sample, **kwargs):
+        if self.aug is None:
+            # Lazy prepare.
+            spec = Augment.get_spec(sample)
+            self.prepare(spec)
+        return self.aug(sample, **kwargs)
+
+    def prepare(self, spec, **kwargs):
+        self._choose()
+        return self.aug.prepare(spec, **kwargs)
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        for prop, aug in zip(self.props, self.augments):
+            format_string += '\n'
+            format_string += '    {0} : {1}'.format(prop, aug)
+        format_string += '\n)'
+        return format_string
+
+    def _choose(self):
+        idx = np.random.choice(len(self.props), size=1, p=self.props)
+        self.aug = self.augments[idx[0]]
