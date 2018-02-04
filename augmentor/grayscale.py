@@ -13,7 +13,7 @@ def perturb_image(img, contrast_factor, brightness_factor):
     return img
 
 
-class Gray(Augment):
+class Grayscale(Augment):
     """Grayscale value perturbation.
 
     Randomly adjust contrast/brightness, and apply random gamma correction.
@@ -35,18 +35,18 @@ class Gray(Augment):
         return format_string
 
 
-class Gray2D(Gray):
+class Grayscale2D(Grayscale):
     """
     Perturb each z-slice independently.
     """
     def __init__(self, **kwargs):
-        super(Gray2D, self).__init__(**kwargs)
+        super(Grayscale2D, self).__init__(**kwargs)
 
     def __call__(self, sample, imgs=None, **kwargs):
-        if imgs is None:
-            imgs = sample.keys()
         # Biased coin toss.
         if np.random.rand() > self.skip:
+            if imgs is None:
+                imgs = sample.keys()
             for key in imgs:
                 img = Augment.to_tensor(sample[key])
                 for z in range(img.shape[-3]):
@@ -56,18 +56,18 @@ class Gray2D(Gray):
         return Augment.sort(sample)
 
 
-class Gray3D(Gray):
+class Grayscale3D(Grayscale):
     """
     Perturb every z-slice identically.
     """
     def __init__(self, **kwargs):
-        super(Gray3D, self).__init__(**kwargs)
+        super(Grayscale3D, self).__init__(**kwargs)
 
     def __call__(self, sample, imgs=None, **kwargs):
-        if imgs is None:
-            imgs = sample.keys()
         # Biased coin toss.
         if np.random.rand() > self.skip:
+            if imgs is None:
+                imgs = sample.keys()
             for key in imgs:
                 img = Augment.to_tensor(sample[key])
                 perturb_image(img, self.contrast_factor,
@@ -75,10 +75,13 @@ class Gray3D(Gray):
         return Augment.sort(sample)
 
 
-class GrayMixed(Blend):
+class GrayscaleMixed(Blend):
+    """
+    Half 2D & half 3D.
+    """
     def __init__(self, **kwargs):
-        grays = [Gray2D(**kwargs), Gray3D(**kwargs)]
-        super(GrayMixed, self).__init__(grays)
+        grays = [Grayscale2D(**kwargs), Grayscale3D(**kwargs)]
+        super(GrayscaleMixed, self).__init__(grays)
 
 
 ########################################################################
@@ -86,9 +89,9 @@ class GrayMixed(Blend):
 ########################################################################
 if __name__ == "__main__":
 
-    gray2D = Gray2D(skip=0)
-    gray3D = Gray3D(skip=0)
-    graymixed = GrayMixed(skip=0)
+    gray2D = Grayscale2D(skip=0)
+    gray3D = Grayscale3D(skip=0)
+    graymixed = GrayscaleMixed(skip=0)
 
     print(gray2D)
     print(gray3D)

@@ -5,10 +5,13 @@ from .augment import Augment, Compose
 
 
 class Flip(Augment):
+    """Random flip.
+
+    Args:
+        axis (int):
+        prob (float, optional):
     """
-    Random flip.
-    """
-    def __init__(self, axis=0, prob=0.5):
+    def __init__(self, axis, prob=0.5):
         self.axis = axis
         self.prob = np.clip(prob, 0, 1)
 
@@ -36,8 +39,11 @@ flip_z = Flip(axis=-3)
 
 
 class Transpose(Augment):
-    """
-    Random transpose.
+    """Random transpose.
+
+    Args:
+        axes (list of int, optional):
+        prob (float, optional):
     """
     def __init__(self, axes=None, prob=0.5):
         assert axes is None or len(axes)==4
