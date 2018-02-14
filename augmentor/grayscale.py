@@ -2,15 +2,7 @@ from __future__ import print_function
 import numpy as np
 
 from .augment import Augment, Blend
-
-
-def perturb_image(img, contrast_factor, brightness_factor):
-    """In-place random grayscale value perturbation."""
-    img *= 1 + (np.random.rand() - 0.5) * contrast_factor
-    img += (np.random.rand() - 0.5) * brightness_factor
-    np.clip(img, 0, 1, out=img)
-    img **= 2.0**(np.random.rand()*2 - 1)
-    return img
+import perturb
 
 
 class Grayscale(Augment):
@@ -43,16 +35,20 @@ class Grayscale2D(Grayscale):
         super(Grayscale2D, self).__init__(**kwargs)
 
     def __call__(self, sample, imgs=None, **kwargs):
+        sample = Augment.to_tensor(sample)
         # Biased coin toss.
         if np.random.rand() > self.skip:
             if imgs is None:
                 imgs = sample.keys()
-            for key in imgs:
-                img = Augment.to_tensor(sample[key])
-                for z in range(img.shape[-3]):
-                    z_slice = img[...,z,:,:]
-                    perturb_image(z_slice, self.contrast_factor,
-                                           self.brightness_factor)
+            zdims = {k: sample[k].shape[-3] for k in imgs}
+            zmax = max(zdims.values())
+            zmin = min(zdims.values())
+            assert zmax==zmin  # Do not allow inputs with different z-dim.
+            for z in range(zmax):
+                perturb = perturb.Grayscale(self.contrast_factor,
+                                            self.brightness_factor)
+                for key in imgs:
+                    perturb(sample[key][...,z,:,:])  # In-place perturbation.
         return Augment.sort(sample)
 
 
@@ -64,14 +60,15 @@ class Grayscale3D(Grayscale):
         super(Grayscale3D, self).__init__(**kwargs)
 
     def __call__(self, sample, imgs=None, **kwargs):
+        sample = Augment.to_tensor(sample)
         # Biased coin toss.
         if np.random.rand() > self.skip:
             if imgs is None:
                 imgs = sample.keys()
+            perturb = perturb.Grayscale(self.contrast_factor,
+                                        self.brightness_factor)
             for key in imgs:
-                img = Augment.to_tensor(sample[key])
-                perturb_image(img, self.contrast_factor,
-                                   self.brightness_factor)
+                perturb(sample[key])
         return Augment.sort(sample)
 
 

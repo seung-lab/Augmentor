@@ -16,10 +16,10 @@ class Flip(Augment):
         self.prob = np.clip(prob, 0, 1)
 
     def __call__(self, sample, **kwargs):
+        sample = Augment.to_tensor(sample)
         # Biased coin toss.
         if np.random.rand() < self.prob:
             for k, v in sample.items():
-                v = Augment.to_tensor(v)
                 # Prevent potential negative stride issues by copying.
                 sample[k] = np.copy(np.flip(v, self.axis))
         return Augment.sort(sample)
@@ -51,10 +51,10 @@ class Transpose(Augment):
         self.prob = np.clip(prob, 0, 1)
 
     def __call__(self, sample, **kwargs):
+        sample = Augment.to_tensor(sample)
         # Biased coin toss.
         if np.random.rand() < self.prob:
             for k, v in sample.items():
-                v = Augment.to_tensor(v)
                 # Prevent potential negative stride issues by copying.
                 sample[k] = np.copy(np.transpose(v, self.axes))
         return Augment.sort(sample)

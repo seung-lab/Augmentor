@@ -2,6 +2,8 @@ from __future__ import print_function
 from collections import OrderedDict
 import numpy as np
 
+import utils
+
 
 class Augment(object):
     """
@@ -10,34 +12,26 @@ class Augment(object):
     def __init__(self):
         raise NotImplementedError
 
-    def __call__(self, sample, **kwargs):
-        raise NotImplementedError
-
     def prepare(self, spec, **kwargs):
         return dict(spec)
+
+    def __call__(self, sample, **kwargs):
+        raise NotImplementedError
 
     def __repr__(self):
         raise NotImplementedError
 
     @staticmethod
-    def sort(sample):
-        # Ensure that sample is sorted by key.
-        return OrderedDict(sorted(sample.items(), key=lambda x: x[0]))
+    def to_tensor(sample):
+        """Ensure that sample is sorted by key."""
+        for k, v in sample.items():
+            sample[k] = utils.to_tensor(v)
+        return sample
 
     @staticmethod
-    def to_tensor(data):
-        """Ensure that data is a numpy 4D array."""
-        assert isinstance(data, np.ndarray)
-        if data.ndim == 2:
-            data = data[np.newaxis,np.newaxis,...]
-        elif data.ndim == 3:
-            data = data[np.newaxis,...]
-        elif data.ndim == 4:
-            pass
-        else:
-            raise RuntimeError("data must be a numpy 4D array")
-        assert data.ndim==4
-        return data
+    def sort(sample):
+        """Ensure that sample is sorted by key."""
+        return OrderedDict(sorted(sample.items(), key=lambda x: x[0]))
 
     @staticmethod
     def get_spec(sample):
@@ -51,31 +45,21 @@ class Augment(object):
 class Compose(Augment):
     """Composes several augments together.
 
-    Adapted from torchvision's transforms.Compose.
-
     Args:
         augments (list of ``Augment`` objects): list of augments to compose.
-
-    Example:
-        >>> augmentor.Compose([
-        >>>     augmentor.Flip(axis=-1),
-        >>>     augmentor.Flip(axis=-2),
-        >>>     augmentor.Flip(axis=-3),
-        >>>     augmentor.Transpose(axes=[0,1,3,2]),
-        >>> ])
     """
     def __init__(self, augments):
         self.augments = augments
-
-    def __call__(self, sample, **kwargs):
-        for aug in self.augments:
-            sample = aug(sample, **kwargs)
-        return Augment.sort(sample)
 
     def prepare(self, spec, **kwargs):
         for aug in reversed(self.augments):
             spec = aug.prepare(spec, **kwargs)
         return dict(spec)
+
+    def __call__(self, sample, **kwargs):
+        for aug in self.augments:
+            sample = aug(sample, **kwargs)
+        return Augment.sort(sample)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -100,16 +84,16 @@ class Blend(Augment):
         assert len(self.augments)==len(self.props)
         self.aug = None
 
+    def prepare(self, spec, **kwargs):
+        self.aug = self._choose()
+        return self.aug.prepare(spec, **kwargs)
+
     def __call__(self, sample, **kwargs):
         if self.aug is None:
             # Lazy prepare.
             spec = Augment.get_spec(sample)
             self.prepare(spec)
         return self.aug(sample, **kwargs)
-
-    def prepare(self, spec, **kwargs):
-        self._choose()
-        return self.aug.prepare(spec, **kwargs)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -121,4 +105,4 @@ class Blend(Augment):
 
     def _choose(self):
         idx = np.random.choice(len(self.props), size=1, p=self.props)
-        self.aug = self.augments[idx[0]]
+        return self.augments[idx[0]]
