@@ -4,6 +4,10 @@ import numpy as np
 from .augment import Augment, Compose
 
 
+__all__ = ['Flip', 'flip_x', 'flip_y', 'flip_z',
+           'Transpose', 'transpose_xy', 'flip_rotate']
+
+
 class Flip(Augment):
     """Random flip.
 
@@ -26,7 +30,7 @@ class Flip(Augment):
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
-        format_string += 'axis={0}, '.format(self.axis)
+        format_string += 'axis={}, '.format(self.axis)
         format_string += 'prob={:.3f}'.format(self.prob)
         format_string += ')'
         return format_string
@@ -46,7 +50,7 @@ class Transpose(Augment):
         prob (float, optional):
     """
     def __init__(self, axes=None, prob=0.5):
-        assert axes is None or len(axes)==4
+        assert (axes is None) or (len(axes)==4)
         self.axes = axes
         self.prob = np.clip(prob, 0, 1)
 
@@ -61,7 +65,7 @@ class Transpose(Augment):
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
-        format_string += 'axes={0}, '.format(self.axes)
+        format_string += 'axes={}, '.format(self.axes)
         format_string += 'prob={:.3f}'.format(self.prob)
         format_string += ')'
         return format_string
@@ -71,8 +75,8 @@ class Transpose(Augment):
 transpose_xy = Transpose(axes=[0,1,3,2])
 
 
-# Random flip augmentation for anisotropic 3D data.
-flip = Compose([flip_z, flip_y, flip_x, transpose_xy])
+# Random flip and rotation (by 90 degree) for anisotropic 3D data.
+flip_rotate = Compose([flip_z, flip_y, flip_x, transpose_xy])
 
 
 ########################################################################
@@ -91,7 +95,7 @@ if __name__ == "__main__":
     sample = dict(image=np.arange(8).reshape(2,2,2))
     print('sample = {}'.format(sample))
 
-    print(flip(sample))
-    print(flip(sample))
-    print(flip(sample))
-    print(flip(sample))
+    print(flip_rotate(sample))
+    print(flip_rotate(sample))
+    print(flip_rotate(sample))
+    print(flip_rotate(sample))

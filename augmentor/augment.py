@@ -2,7 +2,7 @@ from __future__ import print_function
 from collections import OrderedDict
 import numpy as np
 
-import utils
+from . import utils
 
 
 class Augment(object):
@@ -23,7 +23,7 @@ class Augment(object):
 
     @staticmethod
     def to_tensor(sample):
-        """Ensure that sample is sorted by key."""
+        """Ensure that every data in sample is tensor."""
         for k, v in sample.items():
             sample[k] = utils.to_tensor(v)
         return sample
@@ -65,7 +65,7 @@ class Compose(Augment):
         format_string = self.__class__.__name__ + '('
         for aug in self.augments:
             format_string += '\n'
-            format_string += '    {0}'.format(aug)
+            format_string += '    {}'.format(aug)
         format_string += '\n)'
         return format_string
 
@@ -85,12 +85,13 @@ class Blend(Augment):
         self.aug = None
 
     def prepare(self, spec, **kwargs):
+        """Choose an augment and prepare it."""
         self.aug = self._choose()
         return self.aug.prepare(spec, **kwargs)
 
     def __call__(self, sample, **kwargs):
+        # Lazy prep.
         if self.aug is None:
-            # Lazy prepare.
             spec = Augment.get_spec(sample)
             self.prepare(spec)
         return self.aug(sample, **kwargs)

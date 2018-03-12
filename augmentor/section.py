@@ -19,16 +19,16 @@ class Section(Augment):
         self.skip = np.clip(skip, 0, 1)
         self.params = kwargs
 
-    def __call__(self, sample, imgs=None, **kwargs):
+    def __call__(self, sample, keys=None, **kwargs):
         sample = Augment.to_tensor(sample)
         if np.random.rand() > self.skip:
-            imgs, zdim = self._validate(sample, imgs)
+            keys, zdim = self._validate(sample, keys)
             nsecs = np.random.randint(0, self.max_sec + 1)
             zlocs = np.random.choice(zdim, nsecs, replace=False)
             for z in zlocs:
                 perturb = self.get_perturb()
-                for key in imgs:
-                    perturb(sample[key][...,z,:,:])
+                for k in keys:
+                    perturb(sample[k][...,z,:,:])
         return Augment.sort(sample)
 
     def __repr__(self):
@@ -46,9 +46,9 @@ class Section(Augment):
     def _validate(self, sample, keys):
         if keys is None:
             keys = sample.keys()
-        zdims = {k: sample[k].shape[-3] for k in keys}
-        zmax = max(zdims.values())
-        zmin = min(zdims.values())
+        zdims = [sample[k].shape[-3] for k in keys]
+        zmax = max(zdims)
+        zmin = min(zdims)
         assert zmax==zmin  # Do not allow inputs with different z-dim.
         assert zmax>self.max_sec
         return keys, zmax

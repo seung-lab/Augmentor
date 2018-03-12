@@ -1,2 +1,7 @@
-*.pyc
-__pycache__
+build/
+dist/
+augmentor.egg-info/
+*/**/__pycache__
+*/**/*.pyc
+*/**/*~
+*~
