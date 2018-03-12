@@ -1,22 +1,30 @@
 from __future__ import print_function
 import numpy as np
 
-from .augment import Augment
+from .augment import Augment, Blend
 from . import utils
+
+
+__all__ = ['MisalignPlusMissing']
 
 
 class Misalign(Augment):
     """Translational misalignment.
 
     Args:
-        max_disp (2-tuple of int): Min/max displacement.
+        disp (2-tuple of int): Min/max displacement.
         margin (int):
+
+    TODO:
+        1. Valid architecture
+        2. Augmentation territory
     """
-    def __init__(self, disp=(5,25), margin=2):
+    def __init__(self, disp, margin=0):
         self.disp = disp
         self.margin = max(margin, 0)
         self.tx = 0
         self.ty = 0
+        self.zmin = 2
 
     def prepare(self, spec, **kwargs):
         # Original spec
@@ -35,7 +43,7 @@ class Misalign(Augment):
 
         # Pick a section to misalign.
         zmin = min(zdims.values())
-        assert zmin >= 2*margin + 2
+        assert zmin >= 2*margin + self.zmin
         zloc = np.random.randint(margin + 1, zmin - margin)
 
         # Offset z-location.
@@ -47,7 +55,7 @@ class Misalign(Augment):
         return dict(spec)
 
     def __call__(self, sample, **kwargs):
-        return self._misalign(sample)
+        return self.misalign(sample)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -56,19 +64,19 @@ class Misalign(Augment):
         format_string += ')'
         return format_string
 
-    def _misalign(sample):
+    def misalign(self, sample):
         sample = Augment.to_tensor(sample)
 
         for k, v in sample.items():
             # New tensor
             w = np.zeros(self.spec[k], dtype=v.dtype)
             w = utils.to_tensor(w)
+
             # Misalign.
             z, y, x = w.shape[-3:]
             zloc = self.zlocs[k]
             w[:,:zloc,...] = v[:,:zloc,:y,:x]
             w[:,zloc:,...] = v[:,zloc:,-y:,-x:]
-            # Update sample.
             sample[k] = w
 
         return Augment.sort(sample)
@@ -76,26 +84,84 @@ class Misalign(Augment):
 
 class MisalignPlusMissing(Misalign):
     """
-    Translational misalignment + one or two missing sections.
+    Translational misalignment + missing section(s).
     """
-    def __init__(self, **kwargs):
-        super(MisalignPlusMissing, self).__init__(**kwargs)
+    def __init__(self, disp, margin=1):
+        margin = max(margin, 1)
+        super(MisalignPlusMissing, self).__init__(disp, margin=margin)
         assert self.margin > 0
 
     def prepare(self, spec, **kwargs):
         spec = super(MisalignPlusMissing, self).prepare(spec, **kwargs)
-
-        # Missing sections.
-        self.nsec = 1 if np.random.rand() > 0.5 or 2
-
-        # Interpolation.
-        tx = round(self.tx / float(n+1))
-        ty = round(self.ty / float(n+1))
-        trans = [(tx + i*tx, ty + i*ty) for i in range(self.nsec)]
-
+        self.both = np.random.rand() > 0.5
         return dict(spec)
 
+    def __call__(self, sample, keys=None, **kwargs):
+        keys = self._validate(sample, keys)
+        return self.misalign(sample, imgs)
 
-class SlipMisalign(Augment):
-    def __init__(self):
-        raise NotImplementedError
+    def _validate(self, sample, keys):
+        if keys is None:
+            keys = sample.keys()
+        assert all([k in sample for k in keys])
+        return keys
+
+    def misalign(self, sample, keys):
+        sample = Augment.to_tensor(sample)
+
+        for k, v in sample.items():
+            # New tensor
+            w = np.zeros(self.spec[k], dtype=v.dtype)
+            w = utils.to_tensor(w)
+
+            # Misalign.
+            z, y, x = w.shape[-3:]
+            zloc = self.zlocs[k]
+            w[:,:zloc,...] = v[:,:zloc,:y,:x]
+            w[:,zloc:,...] = v[:,zloc:,-y:,-x:]
+
+            if k in keys:
+                # Missing section(s)
+                w[:,zloc,...] = 0
+                if self.both:
+                    w[:,zloc-1,...] = 0
+            else:
+                # Target interpolation
+                if self.both:
+                    tx = round(self.tx / 3.0)
+                    ty = round(self.ty / 3.0)
+                    w[:,zloc-1,...] = v[:,zloc-1,ty:ty+y,tx:tx+x]
+                    w[:,zloc,...] = v[:,zloc,-ty-y:-ty,-tx-x:-tx]
+                else:
+                    tx = round(self.tx / 2.0)
+                    ty = round(self.ty / 2.0)
+                    w[:,zloc,...] = v[:,zloc,ty:ty+y,tx:tx+x]
+
+            # Update sample.
+            sample[k] = w
+
+        return Augment.sort(sample)
+
+
+class SlipMisalign(Misalign):
+    def __init__(self, disp, margin=1):
+        margin = max(margin, 1)
+        super(SlipMisalign, self).__init__(disp, margin=margin)
+        self.zmin = 1
+
+    def misalign(self, sample):
+        sample = Augment.to_tensor(sample)
+
+        for k, v in sample.items():
+            # New tensor
+            w = np.zeros(self.spec[k], dtype=v.dtype)
+            w = utils.to_tensor(w)
+
+            # Misalign.
+            z, y, x = w.shape[-3:]
+            zloc = self.zlocs[k]
+            w[...] = v[...,:y,:x]
+            w[:,zloc,...] = v[:,zloc,-y:,-x:]
+            sample[k] = w
+
+        return Augment.sort(sample)
