@@ -23,7 +23,7 @@ class Augment(object):
 
     @staticmethod
     def to_tensor(sample):
-        """Ensure that every data in sample is tensor."""
+        """Ensure that every data in sample is a tensor."""
         for k, v in sample.items():
             sample[k] = utils.to_tensor(v)
         return sample

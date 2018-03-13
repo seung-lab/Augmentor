@@ -5,7 +5,7 @@ from .augment import Augment, Blend
 from . import utils
 
 
-__all__ = ['MisalignPlusMissing']
+__all__ = ['Misalign','MisalignPlusMissing','SlipMisalign']
 
 
 class Misalign(Augment):
@@ -43,8 +43,8 @@ class Misalign(Augment):
 
         # Pick a section to misalign.
         zmin = min(zdims.values())
-        assert zmin >= 2*margin + self.zmin
-        zloc = np.random.randint(margin + 1, zmin - margin)
+        assert zmin >= 2*self.margin + self.zmin
+        zloc = np.random.randint(self.margin + 1, zmin - self.margin)
 
         # Offset z-location.
         self.zlocs = dict()
@@ -98,7 +98,7 @@ class MisalignPlusMissing(Misalign):
 
     def __call__(self, sample, keys=None, **kwargs):
         keys = self._validate(sample, keys)
-        return self.misalign(sample, imgs)
+        return self.misalign(sample, keys)
 
     def _validate(self, sample, keys):
         if keys is None:

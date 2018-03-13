@@ -7,18 +7,18 @@ class Perturb(object):
     """
     Callable class for in-place image perturbation.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         raise NotImplementedError
 
     def __call__(self, img):
         raise NotImplementedError
 
     def __repr__(self):
-        return self.__class__.__name__
+        return self.__class__.__name__ + '()'
 
 
 class Grayscale(Perturb):
-    """Grayscale value perturbation."""
+    """Grayscale intensity perturbation."""
     def __init__(self, contrast_factor=0.3, brightness_factor=0.3):
         contrast_factor = np.clip(contrast_factor, 0, 2)
         brightness_factor = np.clip(brightness_factor, 0, 2)
@@ -34,15 +34,29 @@ class Grayscale(Perturb):
         np.clip(img, 0, 1, out=img)
         img **= 2.0**self.param['gamma']
 
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        format_string += 'contrast={:.2f}, '.format(self.param['contrast'])
+        format_string += 'brightness={:.2f}, '.format(self.param['brightness'])
+        format_string += 'gamma={:.2f}'.format(self.param['gamma'])
+        format_string += ')'
+        return format_string
+
 
 class Fill(Perturb):
-    """Fill with a scalar value."""
+    """Fill with a scalar."""
     def __init__(self, value=0, random=False):
         value = np.clip(value, 0, 1)
         self.value = np.random.rand() if random else value
 
     def __call__(self, img):
-        img = self.value
+        img[...] = self.value
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        format_string += 'value={:.3f}'.format(self.value)
+        format_string += ')'
+        return format_string
 
 
 class Blur(Perturb):
@@ -52,4 +66,10 @@ class Blur(Perturb):
         self.sigma = np.random.rand()*sigma if random else sigma
 
     def __call__(self, img):
-        gaussian_filter(img, sigma=sigma, output=img)
+        gaussian_filter(img, sigma=self.sigma, output=img)
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        format_string += 'sigma={:.2f}'.format(self.sigma)
+        format_string += ')'
+        return format_string
