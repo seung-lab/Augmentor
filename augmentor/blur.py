@@ -27,7 +27,7 @@ class BlurrySection(Augment):
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
         format_string += 'prob={:.3f}, '.format(self.prob)
-        format_string += 'skip={:.3f}, '.format(self.skip)
+        format_string += 'skip={:.2f}, '.format(self.skip)
         format_string += 'sigma_max={:.1f}'.format(self.sigma_max)
         format_string += ')'
         return format_string

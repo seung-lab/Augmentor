@@ -22,23 +22,23 @@ class Grayscale(Perturb):
     def __init__(self, contrast_factor=0.3, brightness_factor=0.3):
         contrast_factor = np.clip(contrast_factor, 0, 2)
         brightness_factor = np.clip(brightness_factor, 0, 2)
-        param = dict()
-        param['contrast'] = 1 + (np.random.rand() - 0.5) * contrast_factor
-        param['brightness'] = (np.random.rand() - 0.5) * brightness_factor
-        param['gamma'] = (np.random.rand()*2 - 1)
-        self.param = param
+        params = dict()
+        params['contrast'] = 1 + (np.random.rand() - 0.5) * contrast_factor
+        params['brightness'] = (np.random.rand() - 0.5) * brightness_factor
+        params['gamma'] = (np.random.rand()*2 - 1)
+        self.params = params
 
     def __call__(self, img):
-        img *= self.param['contrast']
-        img += self.param['brightness']
+        img *= self.params['contrast']
+        img += self.params['brightness']
         np.clip(img, 0, 1, out=img)
-        img **= 2.0**self.param['gamma']
+        img **= 2.0**self.params['gamma']
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
-        format_string += 'contrast={:.2f}, '.format(self.param['contrast'])
-        format_string += 'brightness={:.2f}, '.format(self.param['brightness'])
-        format_string += 'gamma={:.2f}'.format(self.param['gamma'])
+        format_string += 'contrast={:.2f}, '.format(self.params['contrast'])
+        format_string += 'brightness={:.2f}, '.format(self.params['brightness'])
+        format_string += 'gamma={:.2f}'.format(self.params['gamma'])
         format_string += ')'
         return format_string
 

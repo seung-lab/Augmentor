@@ -22,7 +22,7 @@ class Grayscale(Augment):
         format_string = self.__class__.__name__ + '('
         format_string += 'contrast_factor={0}, '.format(self.contrast_factor)
         format_string += 'brightness_factor={0}, '.format(self.brightness_factor)
-        format_string += 'skip={:.3f}'.format(self.skip)
+        format_string += 'skip={:.2f}'.format(self.skip)
         format_string += ')'
         return format_string
 
