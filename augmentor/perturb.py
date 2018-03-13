@@ -61,7 +61,7 @@ class Fill(Perturb):
 
 class Blur(Perturb):
     """Gaussian blurring."""
-    def __init__(self, sigma, random=False):
+    def __init__(self, sigma=5.0, random=False):
         sigma = max(sigma, 0)
         self.sigma = np.random.rand()*sigma if random else sigma
 

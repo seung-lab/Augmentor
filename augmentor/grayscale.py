@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 
 from .augment import Augment, Blend
-import perturb
+from .perturb import Grayscale
 
 
 class Grayscale(Augment):
@@ -45,8 +45,8 @@ class Grayscale2D(Grayscale):
             zmin = min(zdims.values())
             assert zmax==zmin  # Do not allow inputs with different z-dim.
             for z in range(zmax):
-                perturb = perturb.Grayscale(self.contrast_factor,
-                                            self.brightness_factor)
+                perturb = Grayscale(self.contrast_factor,
+                                    self.brightness_factor)
                 for key in imgs:
                     perturb(sample[key][...,z,:,:])  # In-place perturbation.
         return Augment.sort(sample)
@@ -65,8 +65,8 @@ class Grayscale3D(Grayscale):
         if np.random.rand() > self.skip:
             if imgs is None:
                 imgs = sample.keys()
-            perturb = perturb.Grayscale(self.contrast_factor,
-                                        self.brightness_factor)
+            perturb = Grayscale(self.contrast_factor,
+                                self.brightness_factor)
             for key in imgs:
                 perturb(sample[key])
         return Augment.sort(sample)

@@ -1,6 +1,5 @@
 from __future__ import print_function
 import collections
-import numpy as np
 
 from .augment import Augment, Compose
 from .section import Section, PartialSection
@@ -46,7 +45,8 @@ class MixedMissingSection(Compose):
 ## Testing.
 ########################################################################
 if __name__ == "__main__":
-
+    import numpy as np
+    
     full  = MissingSection(2)
     part  = PartialMissingSection(2)
     mixed = MixedMissingSection((1,1))
