@@ -1,8 +1,8 @@
 from __future__ import print_function
 import collections
 
-from .augment import Augment, Compose
-from .section import Section, PartialSection
+from .augment import Augment
+from .section import Section, PartialSection, MixedSection
 from . import perturb
 
 
@@ -26,19 +26,30 @@ class PartialMissingSection(PartialSection):
         self.params = dict(value=value, random=random)
 
 
-class MixedMissingSection(Compose):
+class MixedMissingSection(MixedSection):
     """
     Mixed full & partial missing sections.
     """
-    def __init__(self, max_sec, **kwargs):
-        if isinstance(max_sec, collections.Sequence):
-            assert len(max_sec) == 2
-            full = MissingSection(max_sec[0], **kwargs)
-            part = PartialMissingSection(max_sec[1], **kwargs)
-        else:
-            full = MissingSection(max_sec, **kwargs)
-            part = PartialMissingSection(max_sec, **kwargs)
-        super(MixedMissingSection, self).__init__([full,part])
+    def __init__(self, max_sec, skip=0, value=0, random=True):
+        super(MixedMissingSection, self).__init__(
+            perturb.Fill, max_sec, skip=skip
+        )
+        self.params = dict(value=value, random=random)
+
+
+# class MixedMissingSection(Compose):
+#     """
+#     Mixed full & partial missing sections.
+#     """
+#     def __init__(self, max_sec, **kwargs):
+#         if isinstance(max_sec, collections.Sequence):
+#             assert len(max_sec) == 2
+#             full = MissingSection(max_sec[0], **kwargs)
+#             part = PartialMissingSection(max_sec[1], **kwargs)
+#         else:
+#             full = MissingSection(max_sec, **kwargs)
+#             part = PartialMissingSection(max_sec, **kwargs)
+#         super(MixedMissingSection, self).__init__([full,part])
 
 
 ########################################################################
@@ -46,10 +57,10 @@ class MixedMissingSection(Compose):
 ########################################################################
 if __name__ == "__main__":
     import numpy as np
-    
+
     full  = MissingSection(2)
     part  = PartialMissingSection(2)
-    mixed = MixedMissingSection((1,1))
+    mixed = MixedMissingSection(2)
 
     print(full)
     print(part)

@@ -1,8 +1,8 @@
 from __future__ import print_function
 import collections
 
-from .augment import Augment, Compose
-from .section import Section, PartialSection
+from .augment import Augment
+from .section import Section, PartialSection, MixedSection
 from . import perturb
 
 
@@ -26,19 +26,30 @@ class PartialBlurrySection(PartialSection):
         self.params = dict(sigma=sigma, random=random)
 
 
-class MixedBlurrySection(Compose):
+class MixedBlurrySection(MixedSection):
     """
-    Mixed full & partial out-of-focus sections.
+    Simulate full & partial out-of-focus sections.
     """
-    def __init__(self, max_sec, **kwargs):
-        if isinstance(max_sec, collections.Sequence):
-            assert len(max_sec) == 2
-            full = BlurrySection(max_sec[0], **kwargs)
-            part = PartialBlurrySection(max_sec[1], **kwargs)
-        else:
-            full = BlurrySection(max_sec, **kwargs)
-            part = PartialBlurrySection(max_sec, **kwargs)
-        super(MixedBlurrySection, self).__init__([full,part])
+    def __init__(self, max_sec, skip=0, sigma=5.0, random=True):
+        super(MixedBlurrySection, self).__init__(
+            perturb.Blur, max_sec, skip=skip
+        )
+        self.params = dict(sigma=sigma, random=random)
+
+
+# class MixedBlurrySection(Compose):
+#     """
+#     Mixed full & partial out-of-focus sections.
+#     """
+#     def __init__(self, max_sec, **kwargs):
+#         if isinstance(max_sec, collections.Sequence):
+#             assert len(max_sec) == 2
+#             full = BlurrySection(max_sec[0], **kwargs)
+#             part = PartialBlurrySection(max_sec[1], **kwargs)
+#         else:
+#             full = BlurrySection(max_sec, **kwargs)
+#             part = PartialBlurrySection(max_sec, **kwargs)
+#         super(MixedBlurrySection, self).__init__([full,part])
 
 
 ########################################################################
@@ -49,7 +60,7 @@ if __name__ == "__main__":
 
     full  = BlurrySection(2)
     part  = PartialBlurrySection(2)
-    mixed = MixedBlurrySection((1,1))
+    mixed = MixedBlurrySection(2)
 
     print(full)
     print(part)

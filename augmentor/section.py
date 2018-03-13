@@ -61,9 +61,6 @@ class PartialSection(Section):
     TODO:
         1. margin
     """
-    def __init__(self, *args, **kwargs):
-        super(PartialSection, self).__init__(*args, **kwargs)
-
     def get_perturb(self):
         class _PerturbQuadrant():
             def __init__(self, perturb, rx, ry, quad):
@@ -92,3 +89,11 @@ class PartialSection(Section):
         quad = np.random.rand(4) > 0.5
         perturb = [self.perturb(**self.params) for _ in range(4)]
         return _PerturbQuadrant(perturb, rx, ry, quad)
+
+
+class MixedSection(PartialSection):
+    def get_perturb(self):
+        if np.random.rand() > 0.5:
+            return Section.get_perturb(self)
+        else:
+            return PartialSection.get_perturb(self)
