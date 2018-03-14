@@ -10,13 +10,15 @@ class Section(Augment):
 
     Args:
         perturb (``Perturb``): ``Perturb`` class.
-        max_sec (int): maximum number of sections to perturb.
+        maxsec (int):
+        prob (float, optional):
         skip (float, optional): skip probability.
     """
-    def __init__(self, perturb, max_sec, skip=0, **params):
+    def __init__(self, perturb, maxsec, prob=None, skip=0, **params):
         assert issubclass(perturb, Perturb)
         self.perturb = perturb
-        self.max_sec = max(max_sec, 0)
+        self.maxsec = max(maxsec, 0)
+        self.prob = np.clip(prob, 0, 1) if prob is not None else prob
         self.skip = np.clip(skip, 0, 1)
         self.params = params
 
@@ -24,8 +26,12 @@ class Section(Augment):
         sample = Augment.to_tensor(sample)
         if np.random.rand() > self.skip:
             keys, zdim = self._validate(sample, keys)
-            nsecs = np.random.randint(1, self.max_sec + 1)
-            zlocs = np.random.choice(zdim, nsecs, replace=False)
+            if self.prob is None:
+                nsecs = np.random.randint(1, int(self.max_or_prob) + 1)
+                zlocs = np.random.choice(zdim, nsecs, replace=False)
+            else:
+                zlocs = np.random.rand(zdim) <= self.prob
+                zlocs = np.where(zlocs)[0]
             for z in zlocs:
                 perturb = self.get_perturb()
                 for k in keys:
@@ -34,9 +40,12 @@ class Section(Augment):
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
-        format_string += 'max_sec={}, '.format(self.max_sec)
-        format_string += 'skip={:.2f}, '.format(self.skip)
         format_string += 'perturb={}, '.format(self.perturb)
+        if self.prob is None:
+            format_string += 'maxsec={}, '.format(self.maxsec)
+        else:
+            format_string += 'prob={:.2f}, '.format(self.prob)
+        format_string += 'skip={:.2f}, '.format(self.skip)
         format_string += 'params={}'.format(self.params)
         format_string += ')'
         return format_string
@@ -50,17 +59,11 @@ class Section(Augment):
         zdims = [sample[k].shape[-3] for k in keys]
         zmin, zmax = min(zdims), max(zdims)
         assert zmax==zmin  # Do not allow inputs with different z-dim.
-        assert zmax>self.max_sec
+        assert zmax>self.maxsec
         return keys, zmax
 
 
 class PartialSection(Section):
-    """
-    Perturb partially random sections in a training sample.
-
-    TODO:
-        1. margin
-    """
     def get_perturb(self):
         class _PerturbQuadrant():
             def __init__(self, perturb, rx, ry, quad):

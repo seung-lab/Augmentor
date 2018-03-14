@@ -3,9 +3,10 @@ import numpy as np
 
 from .augment import Augment, Blend
 from .perturb import Grayscale
+from .section import Section
 
 
-class Grayscale(Augment):
+class Grayscale3D(Augment):
     """Grayscale value perturbation.
 
     Randomly adjust contrast/brightness, and apply random gamma correction.
@@ -15,8 +16,17 @@ class Grayscale(Augment):
         self.brightness_factor = brightness_factor
         self.skip = np.clip(skip, 0, 1)
 
-    def __call__(self, sample, **kwargs):
-        raise NotImplementedError
+    def __call__(self, sample, imgs=None, **kwargs):
+        sample = Augment.to_tensor(sample)
+        # Biased coin toss.
+        if np.random.rand() > self.skip:
+            perturb = Grayscale(self.contrast_factor,
+                                self.brightness_factor)
+            if imgs is None:
+                imgs = sample.keys()
+            for key in imgs:
+                perturb(sample[key])
+        return Augment.sort(sample)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -27,49 +37,14 @@ class Grayscale(Augment):
         return format_string
 
 
-class Grayscale2D(Grayscale):
+class Grayscale2D(Section):
     """
     Perturb each z-slice independently.
     """
-    def __init__(self, **kwargs):
-        super(Grayscale2D, self).__init__(**kwargs)
-
-    def __call__(self, sample, imgs=None, **kwargs):
-        sample = Augment.to_tensor(sample)
-        # Biased coin toss.
-        if np.random.rand() > self.skip:
-            if imgs is None:
-                imgs = sample.keys()
-            zdims = {k: sample[k].shape[-3] for k in imgs}
-            zmax = max(zdims.values())
-            zmin = min(zdims.values())
-            assert zmax==zmin  # Do not allow inputs with different z-dim.
-            for z in range(zmax):
-                perturb = Grayscale(self.contrast_factor,
-                                    self.brightness_factor)
-                for key in imgs:
-                    perturb(sample[key][...,z,:,:])  # In-place perturbation.
-        return Augment.sort(sample)
-
-
-class Grayscale3D(Grayscale):
-    """
-    Perturb every z-slice identically.
-    """
-    def __init__(self, **kwargs):
-        super(Grayscale3D, self).__init__(**kwargs)
-
-    def __call__(self, sample, imgs=None, **kwargs):
-        sample = Augment.to_tensor(sample)
-        # Biased coin toss.
-        if np.random.rand() > self.skip:
-            if imgs is None:
-                imgs = sample.keys()
-            perturb = Grayscale(self.contrast_factor,
-                                self.brightness_factor)
-            for key in imgs:
-                perturb(sample[key])
-        return Augment.sort(sample)
+    def __init__(self, contrast_factor=0.3, brightness_factor=0.3, skip=0.3):
+        super(Grayscale2D, self).__init__(Grayscale, 0, prob=1, skip=skip)
+        self.params = dict(contrast_factor=contrast_factor,
+                           brightness_factor=brightness_factor)
 
 
 class GrayscaleMixed(Blend):
@@ -77,8 +52,8 @@ class GrayscaleMixed(Blend):
     Half 2D & half 3D.
     """
     def __init__(self, **kwargs):
-        grays = [Grayscale2D(**kwargs), Grayscale3D(**kwargs)]
-        super(GrayscaleMixed, self).__init__(grays)
+        grayscales = [Grayscale2D(**kwargs), Grayscale3D(**kwargs)]
+        super(GrayscaleMixed, self).__init__(grayscales)
 
 
 ########################################################################
