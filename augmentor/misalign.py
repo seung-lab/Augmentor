@@ -96,9 +96,9 @@ class MisalignPlusMissing(Misalign):
         self.both = np.random.rand() > 0.5
         return dict(spec)
 
-    def __call__(self, sample, keys=None, **kwargs):
-        keys = self._validate(sample, keys)
-        return self.misalign(sample, keys)
+    def __call__(self, sample, imgs=None, **kwargs):
+        imgs = self._validate(sample, imgs)
+        return self.misalign(sample, imgs)
 
     def _validate(self, sample, keys):
         if keys is None:
@@ -106,7 +106,7 @@ class MisalignPlusMissing(Misalign):
         assert all([k in sample for k in keys])
         return keys
 
-    def misalign(self, sample, keys):
+    def misalign(self, sample, imgs):
         sample = Augment.to_tensor(sample)
 
         for k, v in sample.items():
@@ -120,7 +120,7 @@ class MisalignPlusMissing(Misalign):
             w[:,:zloc,...] = v[:,:zloc,:y,:x]
             w[:,zloc:,...] = v[:,zloc:,-y:,-x:]
 
-            if k in keys:
+            if k in imgs:
                 # Missing section(s)
                 w[:,zloc,...] = 0
                 if self.both:

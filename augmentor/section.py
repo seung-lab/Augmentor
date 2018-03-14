@@ -22,10 +22,10 @@ class Section(Augment):
         self.skip = np.clip(skip, 0, 1)
         self.params = params
 
-    def __call__(self, sample, keys=None, **kwargs):
+    def __call__(self, sample, imgs=None, **kwargs):
         sample = Augment.to_tensor(sample)
         if np.random.rand() > self.skip:
-            keys, zdim = self._validate(sample, keys)
+            imgs, zdim = self._validate(sample, imgs)
             if self.prob is None:
                 nsecs = np.random.randint(1, int(self.max_or_prob) + 1)
                 zlocs = np.random.choice(zdim, nsecs, replace=False)
@@ -34,7 +34,7 @@ class Section(Augment):
                 zlocs = np.where(zlocs)[0]
             for z in zlocs:
                 perturb = self.get_perturb()
-                for k in keys:
+                for k in imgs:
                     perturb(sample[k][...,z,:,:])
         return Augment.sort(sample)
 
