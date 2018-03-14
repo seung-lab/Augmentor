@@ -3,6 +3,7 @@ import numpy as np
 
 from .augment import Augment
 from .warping import warping
+from .geometry.box import Box
 
 
 class Warp(Augment):
@@ -26,14 +27,14 @@ class Warp(Augment):
         self.spec = dict(spec)
 
         # Compute the largest image size.
-        b = Box((0,0,0), (0,0,0))
+        box = Box((0,0,0), (0,0,0))
         for k, v in spec.items():
-            b = b.merge(Box((0,0,0), v[-3:]))
-        maxsz = tuple(b.size())
+            box = box.merge(Box((0,0,0), v[-3:]))
+        maxsz = tuple(box.size())
 
         # Random warp parameters
         params = warping.getWarpParams(maxsz, **kwargs)
-        self.size = tuple(x for x in params[0])  # Convert to tuple.
+        self.size = tuple(x for x in params[0])
         size_diff = tuple(x-y for x,y in zip(self.size, maxsz))
         self.rot     = params[1]
         self.shear   = params[2]
@@ -41,7 +42,7 @@ class Warp(Augment):
         self.stretch = params[4]
         self.twist   = params[5]
 
-        # Replace every shape with the largest required one.
+        # Increase tensor size.
         ret = dict()
         for k, v in spec.items():
             if k in imgs:

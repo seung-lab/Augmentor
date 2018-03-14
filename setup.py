@@ -9,12 +9,12 @@ requirements = [
 ]
 
 
-# extensions = [
-#     Extension(
-#         'augmentor.warping._warping',
-#         sources = ['augmentor/warping/*.pyx', 'augmentor/warping/warping.c']
-#     ),
-# ]
+extensions = [
+    Extension(
+        'augmentor.warping._warping',
+        sources = ['augmentor/warping/*.pyx']
+    ),
+]
 
 
 setup(
@@ -28,6 +28,9 @@ setup(
 
     # Package info
     packages=find_packages(exclude=('test',)),
+
+    # Externel module
+    ext_modules = cythonize(extensions),
 
     zip_safe=True,
     install_requires=requirements,

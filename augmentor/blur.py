@@ -6,6 +6,9 @@ from .section import Section, PartialSection, MixedSection
 from . import perturb
 
 
+__all__ = ['BlurrySection', 'PartialBlurrySection', 'MixedBlurrySection']
+
+
 class BlurrySection(Section):
     """
     Simulate full out-of-focus sections in a training sample.

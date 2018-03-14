@@ -6,6 +6,9 @@ from .section import Section, PartialSection, MixedSection
 from . import perturb
 
 
+__all__ = ['MissingSection', 'PartialMissingSection', 'MixedMissingSection']
+
+
 class MissingSection(Section):
     """
     Simulate full missing sections in a training sample.

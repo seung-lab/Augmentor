@@ -6,3 +6,4 @@ augmentor.egg-info/
 */**/*.pyc
 */**/*~
 *~
+_warping.c
