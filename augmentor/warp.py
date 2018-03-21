@@ -66,8 +66,8 @@ class Warp(Augment):
                             self.rot, self.shear,
                             self.scale, self.stretch, self.twist
                         )
-            # Prevent potential negative stride issues by copying.
-            sample[k] = np.copy(np.transpose(v, (1,0,2,3)))
+                # Prevent potential negative stride issues by copying.
+                sample[k] = np.copy(np.transpose(v, (1,0,2,3)))
         return Augment.sort(sample)
 
     def __repr__(self):
