@@ -90,21 +90,21 @@ class MisalignPlusMissing(Misalign):
         margin = max(margin, 1)
         super(MisalignPlusMissing, self).__init__(disp, margin=margin)
         assert self.margin > 0
+        self.imgs = []
 
-    def prepare(self, spec, **kwargs):
+    def prepare(self, spec, imgs=[], **kwargs):
         spec = super(MisalignPlusMissing, self).prepare(spec, **kwargs)
         self.both = np.random.rand() > 0.5
+        self.imgs = self._validate(spec, imgs)
         return dict(spec)
 
-    def __call__(self, sample, imgs=None, **kwargs):
-        imgs = self._validate(sample, imgs)
-        return self.misalign(sample, imgs)
+    def __call__(self, sample, **kwargs):
+        return self.misalign(sample, self.imgs)
 
-    def _validate(self, sample, keys):
-        if keys is None:
-            keys = sample.keys()
-        assert all([k in sample for k in keys])
-        return keys
+    def _validate(self, spec, imgs):
+        assert len(imgs) > 0
+        assert all([k in spec for k in imgs])
+        return imgs
 
     def misalign(self, sample, imgs):
         sample = Augment.to_tensor(sample)
@@ -144,12 +144,22 @@ class MisalignPlusMissing(Misalign):
 
 
 class SlipMisalign(Misalign):
-    def __init__(self, disp, margin=1):
+    def __init__(self, disp, margin=1, interp=False):
         margin = max(margin, 1)
         super(SlipMisalign, self).__init__(disp, margin=margin)
         self.zmin = 1
+        self.interp = interp
+        self.imgs = []
 
-    def misalign(self, sample):
+    def prepare(self, spec, imgs=[], **kwargs):
+        spec = super(SlipMisalign, self).prepare(spec, **kwargs)
+        self.imgs = self._validate(spec, imgs)
+        return dict(spec)
+
+    def __call__(self, sample, **kwargs):
+        return self.misalign(sample, self.imgs)
+
+    def misalign(self, sample, imgs):
         sample = Augment.to_tensor(sample)
 
         for k, v in sample.items():
@@ -161,7 +171,8 @@ class SlipMisalign(Misalign):
             z, y, x = w.shape[-3:]
             zloc = self.zlocs[k]
             w[...] = v[...,:y,:x]
-            w[:,zloc,...] = v[:,zloc,-y:,-x:]
+            if (k in imgs) or (not self.interp):
+                w[:,zloc,...] = v[:,zloc,-y:,-x:]
             sample[k] = w
 
         return Augment.sort(sample)

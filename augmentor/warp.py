@@ -18,10 +18,15 @@ class Warp(Augment):
     def __init__(self, skip=0):
         self.skip = np.clip(skip, 0, 1)
         self.do_warp = False
+        self.imgs = []
 
-    def prepare(self, spec, imgs=None, **kwargs):
+    def prepare(self, spec, imgs=[], **kwargs):
         # Biased coin toss
         self.do_warp = np.random.rand() > self.skip
+        if not self.do_warp:
+            return dict(spec)
+
+        self.imgs = self._validate(spec, imgs)
 
         # Save original spec.
         self.spec = dict(spec)
@@ -51,12 +56,12 @@ class Warp(Augment):
                 ret[k] = v[:-3] + tuple(x+y for x,y in zip(v[-3:], size_diff))
         return ret
 
-    def __call__(self, sample, imgs=None, **kwargs):
+    def __call__(self, sample, **kwargs):
         sample = Augment.to_tensor(sample)
         if self.do_warp:
             for k, v in sample.items():
                 v = np.transpose(v, (1,0,2,3))
-                if k in imgs:
+                if k in self.imgs:
                     v = warping.warp3d(v, self.spec[k][-3:],
                             self.rot, self.shear,
                             self.scale, self.stretch, self.twist
@@ -75,3 +80,8 @@ class Warp(Augment):
         format_string += 'skip={:.2f}'.format(self.skip)
         format_string += ')'
         return format_string
+
+    def _validate(self, spec, imgs):
+        assert len(imgs) > 0
+        assert all([k in spec for k in imgs])
+        return imgs

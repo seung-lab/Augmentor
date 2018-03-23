@@ -15,17 +15,22 @@ class Grayscale3D(Augment):
         self.contrast_factor = contrast_factor
         self.brightness_factor = brightness_factor
         self.skip = np.clip(skip, 0, 1)
+        self.do_aug = False
+        self.imgs = []
 
-    def __call__(self, sample, imgs=None, **kwargs):
-        sample = Augment.to_tensor(sample)
+    def prepare(self, spec, imgs=[], **kwargs):
         # Biased coin toss.
-        if np.random.rand() > self.skip:
+        self.do_aug = np.random.rand() > self.skip
+        self.imgs = self._validate(spec, imgs)
+        return dict(spec)
+
+    def __call__(self, sample, **kwargs):
+        sample = Augment.to_tensor(sample)
+        if self.do_aug:
             perturb = Grayscale(self.contrast_factor,
                                 self.brightness_factor)
-            if imgs is None:
-                imgs = sample.keys()
-            for key in imgs:
-                perturb(sample[key])
+            for k in self.imgs:
+                perturb(sample[k])
         return Augment.sort(sample)
 
     def __repr__(self):
@@ -35,6 +40,11 @@ class Grayscale3D(Augment):
         format_string += 'skip={:.2f}'.format(self.skip)
         format_string += ')'
         return format_string
+
+    def _validate(self, spec, imgs):
+        assert len(imgs) > 0
+        assert all([k in spec for k in imgs])
+        return imgs
 
 
 class Grayscale2D(Section):

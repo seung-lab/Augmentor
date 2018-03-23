@@ -21,21 +21,33 @@ class Section(Augment):
         self.prob = np.clip(prob, 0, 1) if prob is not None else prob
         self.skip = np.clip(skip, 0, 1)
         self.params = params
+        self.zlocs = []
+        self.imgs = []
 
-    def __call__(self, sample, imgs=None, **kwargs):
+    def prepare(self, spec, imgs=[], **kwargs):
+        # Biased coin toss
+        if np.random.rand() < self.skip:
+            self.zlocs = []
+            return dict(spec)
+
+        # Random sections
+        zdim = self._validate(spec, imgs)
+        if self.prob is None:
+            nsecs = np.random.randint(1, int(self.max_or_prob) + 1)
+            zlocs = np.random.choice(zdim, nsecs, replace=False)
+        else:
+            zlocs = np.random.rand(zdim) <= self.prob
+            zlocs = np.where(zlocs)[0]
+        self.zlocs = zlocs
+        self.imgs = imgs
+        return dict(spec)
+
+    def __call__(self, sample, **kwargs):
         sample = Augment.to_tensor(sample)
-        if np.random.rand() > self.skip:
-            imgs, zdim = self._validate(sample, imgs)
-            if self.prob is None:
-                nsecs = np.random.randint(1, int(self.max_or_prob) + 1)
-                zlocs = np.random.choice(zdim, nsecs, replace=False)
-            else:
-                zlocs = np.random.rand(zdim) <= self.prob
-                zlocs = np.where(zlocs)[0]
-            for z in zlocs:
-                perturb = self.get_perturb()
-                for k in imgs:
-                    perturb(sample[k][...,z,:,:])
+        for z in self.zlocs:
+            perturb = self.get_perturb()
+            for k in self.imgs:
+                perturb(sample[k][...,z,:,:])
         return Augment.sort(sample)
 
     def __repr__(self):
@@ -53,14 +65,14 @@ class Section(Augment):
     def get_perturb(self):
         return self.perturb(**self.params)
 
-    def _validate(self, sample, keys):
-        if keys is None:
-            keys = sample.keys()
-        zdims = [sample[k].shape[-3] for k in keys]
+    def _validate(self, spec, imgs):
+        assert len(imgs) > 0
+        assert all([k in spec for k in imgs])
+        zdims = [spec[k][-3] for k in imgs]
         zmin, zmax = min(zdims), max(zdims)
         assert zmax==zmin  # Do not allow inputs with different z-dim.
         assert zmax>self.maxsec
-        return keys, zmax
+        return zmax
 
 
 class PartialSection(Section):
