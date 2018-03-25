@@ -13,13 +13,16 @@ class Section(Augment):
         maxsec (int):
         prob (float, optional):
         skip (float, optional): skip probability.
+        double (bool, optional): double section.
     """
-    def __init__(self, perturb, maxsec, prob=None, skip=0, **params):
+    def __init__(self, perturb, maxsec, prob=None, skip=0, double=False,
+                 **params):
         assert issubclass(perturb, Perturb)
         self.perturb = perturb
         self.maxsec = max(maxsec, 0)
         self.prob = np.clip(prob, 0, 1) if prob is not None else prob
         self.skip = np.clip(skip, 0, 1)
+        self.margin = int(double)
         self.params = params
         self.zlocs = []
         self.imgs = []
@@ -31,7 +34,7 @@ class Section(Augment):
             return dict(spec)
 
         # Random sections
-        zdim = self._validate(spec, imgs)
+        zdim = self._validate(spec, imgs) - self.margin
         if self.prob is None:
             nsecs = np.random.randint(1, int(self.max_or_prob) + 1)
             zlocs = np.random.choice(zdim, nsecs, replace=False)
@@ -45,6 +48,8 @@ class Section(Augment):
     def __call__(self, sample, **kwargs):
         sample = Augment.to_tensor(sample)
         for z in self.zlocs:
+            if self.margin > 0:
+                z = slice(z, z + self.margin)
             perturb = self.get_perturb()
             for k in self.imgs:
                 perturb(sample[k][...,z,:,:])

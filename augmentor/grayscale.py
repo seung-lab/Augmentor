@@ -66,16 +66,6 @@ class GrayscaleMixed(Blend):
         super(GrayscaleMixed, self).__init__(grayscales)
 
 
-# class Grayscale2D(Section):
-#     """
-#     Perturb each z-slice independently.
-#     """
-#     def __init__(self, contrast_factor=0.3, brightness_factor=0.3, skip=0.3):
-#         super(Grayscale2D, self).__init__(Grayscale, 0, prob=1, skip=skip)
-#         self.params = dict(contrast_factor=contrast_factor,
-#                            brightness_factor=brightness_factor)
-
-
 ########################################################################
 ## Testing.
 ########################################################################
