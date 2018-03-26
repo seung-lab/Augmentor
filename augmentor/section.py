@@ -15,10 +15,11 @@ class Section(Augment):
         skip (float, optional): skip probability.
         double (bool, optional): double section.
     """
-    def __init__(self, perturb, maxsec, prob=None, skip=0, double=False,
+    def __init__(self, perturb, maxsec=0, prob=None, skip=0, double=False,
                  **params):
         assert issubclass(perturb, Perturb)
         self.perturb = perturb
+        assert (maxsec > 0) or (prob is not None)
         self.maxsec = max(maxsec, 0)
         self.prob = np.clip(prob, 0, 1) if prob is not None else prob
         self.skip = np.clip(skip, 0, 1)
@@ -36,7 +37,7 @@ class Section(Augment):
         # Random sections
         zdim = self._validate(spec, imgs) - self.margin
         if self.prob is None:
-            nsecs = np.random.randint(1, int(self.max_or_prob) + 1)
+            nsecs = np.random.randint(1, int(self.maxsec) + 1)
             zlocs = np.random.choice(zdim, nsecs, replace=False)
         else:
             zlocs = np.random.rand(zdim) <= self.prob
@@ -49,7 +50,7 @@ class Section(Augment):
         sample = Augment.to_tensor(sample)
         for z in self.zlocs:
             if self.margin > 0:
-                z = slice(z, z + self.margin)
+                z = slice(z, z + self.margin + 1)
             perturb = self.get_perturb()
             for k in self.imgs:
                 perturb(sample[k][...,z,:,:])
@@ -63,6 +64,7 @@ class Section(Augment):
         else:
             format_string += 'prob={:.2f}, '.format(self.prob)
         format_string += 'skip={:.2f}, '.format(self.skip)
+        format_string += 'double={}, '.format(bool(self.margin))
         format_string += 'params={}'.format(self.params)
         format_string += ')'
         return format_string

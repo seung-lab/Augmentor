@@ -2,6 +2,7 @@ from __future__ import print_function
 import numpy as np
 
 from .augment import Augment, Blend
+from .flip import FlipRotate
 from . import utils
 
 
@@ -25,8 +26,11 @@ class Misalign(Augment):
         self.tx = 0
         self.ty = 0
         self.zmin = 2
+        self.flip_rotate = FlipRotate()
 
     def prepare(self, spec, **kwargs):
+        spec = self.flip_rotate.prepare(spec, **kwargs)
+
         # Original spec
         self.spec = dict(spec)
 
@@ -49,13 +53,13 @@ class Misalign(Augment):
         # Offset z-location.
         self.zlocs = dict()
         for k, zdim in zdims.items():
-            offset = zdim - zmin
+            offset = (zdim - zmin) // 2
             self.zlocs[k] = offset + zloc
 
         return dict(spec)
 
     def __call__(self, sample, **kwargs):
-        return self.misalign(sample)
+        return self.flip_rotate(self.misalign(sample))
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -99,7 +103,7 @@ class MisalignPlusMissing(Misalign):
         return dict(spec)
 
     def __call__(self, sample, **kwargs):
-        return self.misalign(sample, self.imgs)
+        return self.flip_rotate(self.misalign(sample, self.imgs))
 
     def _validate(self, spec, imgs):
         assert len(imgs) > 0
@@ -157,7 +161,20 @@ class SlipMisalign(Misalign):
         return dict(spec)
 
     def __call__(self, sample, **kwargs):
-        return self.misalign(sample, self.imgs)
+        return self.flip_rotate(self.misalign(sample, self.imgs))
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        format_string += 'disp={0}, '.format(self.disp)
+        format_string += 'margin={0}, '.format(self.margin)
+        format_string += 'interp={0}'.format(self.interp)
+        format_string += ')'
+        return format_string
+
+    def _validate(self, spec, imgs):
+        assert len(imgs) > 0
+        assert all([k in spec for k in imgs])
+        return imgs
 
     def misalign(self, sample, imgs):
         sample = Augment.to_tensor(sample)

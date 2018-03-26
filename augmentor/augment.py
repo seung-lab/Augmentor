@@ -100,7 +100,7 @@ class Blend(Augment):
         format_string = self.__class__.__name__ + '('
         for prop, aug in zip(self.props, self.augments):
             format_string += '\n'
-            format_string += '    {0} : {1}'.format(prop, aug)
+            format_string += '    {0:.3f} : {1}'.format(prop, aug)
         format_string += '\n)'
         return format_string
 
