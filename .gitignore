@@ -1,6 +1,5 @@
 build/
 dist/
-test/
 augmentor.egg-info/
 */**/__pycache__
 */**/*.pyc
