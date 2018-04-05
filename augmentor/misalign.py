@@ -90,10 +90,12 @@ class MisalignPlusMissing(Misalign):
     """
     Translational misalignment + missing section(s).
     """
-    def __init__(self, disp, margin=1):
+    def __init__(self, disp, margin=1, value=0, random=False):
         margin = max(margin, 1)
         super(MisalignPlusMissing, self).__init__(disp, margin=margin)
         assert self.margin > 0
+        self.value = value
+        self.random = random
         self.imgs = []
 
     def prepare(self, spec, imgs=[], **kwargs):
@@ -113,6 +115,8 @@ class MisalignPlusMissing(Misalign):
     def misalign(self, sample, imgs):
         sample = Augment.to_tensor(sample)
 
+        val = np.random.rand() if self.random else self.value
+
         for k, v in sample.items():
             # New tensor
             w = np.zeros(self.spec[k], dtype=v.dtype)
@@ -126,9 +130,9 @@ class MisalignPlusMissing(Misalign):
 
             if k in imgs:
                 # Missing section(s)
-                w[:,zloc,...] = 0
+                w[:,zloc,...] = val
                 if self.both:
-                    w[:,zloc-1,...] = 0
+                    w[:,zloc-1,...] = val
             else:
                 # Target interpolation
                 if self.both:
