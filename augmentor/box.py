@@ -7,6 +7,9 @@ from .geometry.vector import Vec3d
 from .perturb import Perturb
 
 
+__all__ = ['FillBox']
+
+
 class BoxOcclusion(Augment):
     """
     Box occlusion.
@@ -117,7 +120,7 @@ class BoxOcclusion(Augment):
         return sample
 
 
-class FilledBoxOcclusion(BoxOcclusion):
+class FillBox(BoxOcclusion):
     def __init__(self, value=0, random=True, **kwargs):
-        super(FilledBoxOcclusion, self).__init__(perturb.Fill, **kwargs)
+        super(FillBox, self).__init__(perturb.Fill, **kwargs)
         self.params = dict(value=value, random=random)
