@@ -73,3 +73,25 @@ class Blur(Perturb):
         format_string += 'sigma={:.2f}'.format(self.sigma)
         format_string += ')'
         return format_string
+
+
+class Noise(Perturb):
+    """Uniform noise + Gaussian blurring."""
+    def __init__(self, sigma=(2,5)):
+        assert len(sigma)==2
+        self.sigma = tuple(max(s, 0) for s in sigma)
+
+    def __call__(self, img):
+        patch = (np.random.rand(*img.shape[-3:])).astype(img.dtype)
+        s1 = self.sigma[0]
+        gaussian_filter(patch, sigma=(0,s1,s1), output=patch)
+        patch = (patch > 0.5).astype(img.dtype)
+        s2 = self.sigma[1]
+        gaussian_filter(patch, sigma=(0,s2,s2), output=patch)
+        img[...,:,:,:] = patch
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        format_string += 'sigma={:}'.format(self.sigma)
+        format_string += ')'
+        return format_string

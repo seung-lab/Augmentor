@@ -7,7 +7,7 @@ from .geometry.vector import Vec3d
 from .perturb import Perturb
 
 
-__all__ = ['FillBox']
+__all__ = ['FillBox', 'BlurBox', 'NoiseBox']
 
 
 class BoxOcclusion(Augment):
@@ -48,6 +48,7 @@ class BoxOcclusion(Augment):
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
+        # TODO(kisuk): add properties.
         format_string += ')'
         return format_string
 
@@ -67,7 +68,7 @@ class BoxOcclusion(Augment):
             dim = self.spec[k][-3:]
             box = centered_box((0,0,0), dim)
             bbox_union = box if bbox_union is None else bbox_union.merge(box)
-            self.bbox[key] = box
+            self.bbox[k] = box
 
         # Create a mask.
         offset = bbox_union.min()
@@ -80,7 +81,7 @@ class BoxOcclusion(Augment):
 
         while True:
             # Random location
-            loc = (0,0,0)
+            loc = [0,0,0]
             for i in range(3):
                 m = self.margin[i]
                 loc[i] = np.random.randint(m, bbox_dim[i] - m)
@@ -93,7 +94,6 @@ class BoxOcclusion(Augment):
 
             # Random box
             box = centered_box(loc, dim)
-            box.translate(-offset)
 
             # Perturb
             perturb = self.get_perturb()
@@ -102,6 +102,7 @@ class BoxOcclusion(Augment):
                 box2 = bbox.intersect(box)
                 if box2 is None:
                     continue
+                box2.translate(-offset)
                 vmin = box2.min()
                 vmax = box2.max()
                 s0 = slice(vmin[0],vmax[0])
@@ -120,7 +121,22 @@ class BoxOcclusion(Augment):
         return sample
 
 
+from .perturb import Fill, Blur, Noise
+
+
 class FillBox(BoxOcclusion):
     def __init__(self, value=0, random=True, **kwargs):
-        super(FillBox, self).__init__(perturb.Fill, **kwargs)
+        super(FillBox, self).__init__(Fill, **kwargs)
         self.params = dict(value=value, random=random)
+
+
+class BlurBox(BoxOcclusion):
+    def __init__(self, sigma=5.0, random=True, **kwargs):
+        super(BlurBox, self).__init__(Blur, **kwargs)
+        self.params = dict(sigma=sigma, random=random)
+
+
+class NoiseBox(BoxOcclusion):
+    def __init__(self, sigma=(2,5), **kwargs):
+        super(NoiseBox, self).__init__(Noise, **kwargs)
+        self.params = dict(sigma=sigma)
