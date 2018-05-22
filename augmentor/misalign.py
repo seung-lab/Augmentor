@@ -43,7 +43,7 @@ class Misalign(Augment):
         for k, shape in spec.items():
             z, y, x = shape[-3:]
             zdims[k] = z
-            spec[k] = shape[:-2] + (y+self.ty, x+self.tx)
+            spec[k] = shape[:-2] + (y + self.ty, x + self.tx)
 
         # Pick a section to misalign.
         zmin = min(zdims.values())
