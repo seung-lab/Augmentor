@@ -1,7 +1,10 @@
 from __future__ import print_function
 import numpy as np
 
-from .augment import Augment
+from .augment import Augment, Compose
+
+
+__all__ = ['LostSection']
 
 
 class SingleLostSection(Augment):
@@ -57,3 +60,14 @@ class SingleLostSection(Augment):
         assert zmax == zmin
         assert zmax > 1
         return zmax
+
+
+class LostSection(Compose):
+    def __init__(self, maxsec, skip=0, **kwargs):
+        augs = [SingleLostSection(skip=skip) for _ in range(maxsec)]
+        super(LostSection, self).__init__(augs)
+
+
+# class LostPlusMissing(Augment):
+#     def __init__(self):
+#         pass
