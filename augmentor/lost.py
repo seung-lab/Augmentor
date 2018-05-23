@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy as np
 
-from .augment import Augment, Compose
+from .augment import Augment
 
 
 __all__ = ['LostSection', 'LostPlusMissing']
