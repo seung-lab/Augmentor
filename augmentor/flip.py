@@ -54,15 +54,16 @@ class Transpose(Augment):
         self.do_aug = False
 
     def prepare(self, spec, **kwargs):
+        spec = dict(spec)
         # Biased coin toss
         self.do_aug = np.random.rand() < self.prob
         if (not self.do_aug) or (self.axes is None):
-            return dict(spec)
+            return spec
         for k, v in spec.items():
             assert len(v)==3 or len(v)==4
             offset = 1 if len(v)==3 else 0
             spec[k] = tuple(v[:-3]) + tuple(v[x - offset] for x in self.axes[-3:])
-        return dict(spec)
+        return spec
 
     def __call__(self, sample, **kwargs):
         sample = Augment.to_tensor(sample)

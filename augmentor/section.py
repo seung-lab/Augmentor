@@ -74,7 +74,7 @@ class Section(Augment):
 
     def _validate(self, spec, imgs):
         assert len(imgs) > 0
-        assert all([k in spec for k in imgs])
+        assert all(k in spec for k in imgs)
         zdims = [spec[k][-3] for k in imgs]
         zmin, zmax = min(zdims), max(zdims)
         assert zmax==zmin  # Do not allow inputs with different z-dim.

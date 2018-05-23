@@ -40,6 +40,7 @@ class Misalign(Augment):
 
         # Increase tensor dimension by the amount of displacement.
         zdims = dict()
+        spec = dict(spec)
         for k, shape in spec.items():
             z, y, x = shape[-3:]
             zdims[k] = z
@@ -56,7 +57,7 @@ class Misalign(Augment):
             offset = (zdim - zmin) // 2
             self.zlocs[k] = offset + zloc
 
-        return dict(spec)
+        return spec
 
     def __call__(self, sample, **kwargs):
         return self.flip_rotate(self.misalign(sample))
