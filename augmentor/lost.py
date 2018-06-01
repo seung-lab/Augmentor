@@ -20,18 +20,25 @@ class LostSection(Augment):
     def __init__(self, nsec, skip=0,**kwargs):
         self.nsec = max(nsec, 1)
         self.skip = np.clip(skip, 0, 1)
-        self.zloc = 0
+        self.zloc = {}
 
     def prepare(self, spec, **kwargs):
         # Biased coin toss
         if np.random.rand() < self.skip:
-            self.zloc = 0
+            self.zloc = {}
             return dict(spec)
 
         # Random sections
-        zdim = self._validate(spec) - 1
-        zloc = np.random.choice(zdim, 1, replace=False) + 1
-        self.zloc = zloc[0]
+        zmin = self._validate(spec) - 1
+        zloc = np.random.choice(zmin, 1, replace=False) + 1
+        zloc = zloc[0]
+
+        # Offset z-location.
+        self.zloc = dict()
+        for k, v in spec.items():
+            zdim = v[-3]
+            offset = (zdim - zmin) // 2
+            self.zloc[k] = offset + zloc
 
         # Update spec
         spec = dict(spec)
@@ -43,10 +50,10 @@ class LostSection(Augment):
 
     def __call__(self, sample, **kwargs):
         sample = Augment.to_tensor(sample)
-        if self.zloc > 0:
+        if len(self.zloc) > 0:
             nsec = self.nsec
-            zloc = self.zloc
             for k, v in sample.items():
+                zloc = self.zloc[k]
                 c, z, y, x = v.shape[-4:]
                 w = np.zeros((c, z - nsec, y, x), dtype=v.dtype)
                 w[:,:zloc,:,:] = v[:,:zloc,:,:]
@@ -63,15 +70,14 @@ class LostSection(Augment):
 
     def _validate(self, spec):
         zdims = [v[-3] for v in spec.values()]
-        zmin, zmax = min(zdims), max(zdims)
-        assert zmax == zmin
-        assert zmax > 1
-        return zmax
+        zmin = min(zdims)
+        assert zmin > 1
+        return zmin
 
 
 class LostPlusMissing(LostSection):
     def __init__(self, skip=0, value=0, random=False):
-        super(LostPlusMissing, self).__init__(3, skip=skip)
+        super(LostPlusMissing, self).__init__(2, skip=skip)
         self.value = value
         self.random = random
         self.imgs = []
@@ -89,19 +95,20 @@ class LostPlusMissing(LostSection):
     def augment(self, sample):
         sample = Augment.to_tensor(sample)
 
-        if self.zloc > 0:
+        if len(self.zloc) > 0:
             val = np.random.rand() if self.random else self.value
-            assert self.nsec == 3
+            assert self.nsec == 2
             nsec = self.nsec
-            zloc = self.zloc
             for k, v in sample.items():
+                zloc = self.zloc[k]
+
                 # New tensor
                 c, z, y, x = v.shape[-4:]
-                w = np.zeros((c, z - nsec + 1, y, x), dtype=v.dtype)
+                w = np.zeros((c, z - nsec, y, x), dtype=v.dtype)
 
                 # Non-missing part
                 w[:,:zloc,:,:] = v[:,:zloc,:,:]
-                w[:,zloc+1:,:,:] = v[:,zloc + nsec:,:,:]
+                w[:,zloc+1:,:,:] = v[:,zloc+nsec+1:,:,:]
 
                 # Missing part
                 if k in self.imgs:
