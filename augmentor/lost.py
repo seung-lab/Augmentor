@@ -17,7 +17,7 @@ class LostSection(Augment):
     TODO:
         Support for valid architecture.
     """
-    def __init__(self, nsec, skip=0,**kwargs):
+    def __init__(self, nsec, skip=0, **kwargs):
         self.nsec = max(nsec, 1)
         self.skip = np.clip(skip, 0, 1)
         self.zloc = 0

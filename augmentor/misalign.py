@@ -110,7 +110,7 @@ class MisalignPlusMissing(Misalign):
 
     def _validate(self, spec, imgs):
         assert len(imgs) > 0
-        assert all([k in spec for k in imgs])
+        assert all(k in spec for k in imgs)
         return imgs
 
     def misalign(self, sample, imgs):
@@ -178,7 +178,7 @@ class SlipMisalign(Misalign):
 
     def _validate(self, spec, imgs):
         assert len(imgs) > 0
-        assert all([k in spec for k in imgs])
+        assert all(k in spec for k in imgs)
         return imgs
 
     def misalign(self, sample, imgs):

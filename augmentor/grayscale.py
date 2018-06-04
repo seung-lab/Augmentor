@@ -47,7 +47,7 @@ class Grayscale3D(Augment):
 
     def _validate(self, spec, imgs):
         assert len(imgs) > 0
-        assert all([k in spec for k in imgs])
+        assert all(k in spec for k in imgs)
         return imgs
 
 
