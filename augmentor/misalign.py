@@ -3,10 +3,12 @@ import numpy as np
 
 from .augment import Augment, Blend
 from .flip import FlipRotate
+from .track import Track
 from . import utils
 
 
-__all__ = ['Misalign','MisalignPlusMissing','SlipMisalign']
+__all__ = ['Misalign','MisalignPlusMissing',
+           'MisalignTrackMissing','SlipMisalign']
 
 
 class Misalign(Augment):
@@ -106,18 +108,18 @@ class MisalignPlusMissing(Misalign):
         return dict(spec)
 
     def __call__(self, sample, **kwargs):
-        return self.flip_rotate(self.misalign(sample, self.imgs))
+        sample = Augment.to_tensor(sample)
+        sample = self.misalign(sample)
+        sample = self.missing(sample)
+        sample = self.flip_rotate(sample)
+        return Augment.sort(sample)
 
     def _validate(self, spec, imgs):
         assert len(imgs) > 0
         assert all(k in spec for k in imgs)
         return imgs
 
-    def misalign(self, sample, imgs):
-        sample = Augment.to_tensor(sample)
-
-        val = np.random.rand() if self.random else self.value
-
+    def misalign(self, sample):
         for k, v in sample.items():
             # New tensor
             w = np.zeros(self.spec[k], dtype=v.dtype)
@@ -129,12 +131,7 @@ class MisalignPlusMissing(Misalign):
             w[:,:zloc,...] = v[:,:zloc,:y,:x]
             w[:,zloc:,...] = v[:,zloc:,-y:,-x:]
 
-            if k in imgs:
-                # Missing section(s)
-                w[:,zloc,...] = val
-                if self.both:
-                    w[:,zloc-1,...] = val
-            else:
+            if k not in self.imgs:
                 # Target interpolation
                 if self.both:
                     tx = round(self.tx / 3.0)
@@ -149,6 +146,42 @@ class MisalignPlusMissing(Misalign):
             # Update sample.
             sample[k] = w
 
+        return sample
+
+    def missing(self, sample):
+        val = np.random.rand() if self.random else self.value
+
+        for k in self.imgs:
+            zloc = self.zlocs[k]
+            img = sample[k]
+            img[:,zloc,...] = val
+            if self.both:
+                img[:,zloc-1,...] = val
+            sample[k] = img
+
+        return sample
+
+
+class MisalignTrackMissing(MisalignPlusMissing):
+    """
+    Translational misalignment + track mark + missing section(s).
+    """
+    def __init__(self, track, disp, **kwargs):
+        assert isinstance(track, Track)
+        super(MisalignTrackMissing, self).__init__(disp, **kwargs)
+        self.track = track
+
+    def prepare(self, spec, imgs=[], **kwargs):
+        spec = super(MisalignTrackMissing, self).prepare(spec, imgs=imgs, **kwargs)
+        spec = self.track.prepare(spec, imgs=imgs, **kwargs)
+        return dict(spec)
+
+    def __call__(self, sample, **kwargs):
+        sample = Augment.to_tensor(sample)
+        sample = self.misalign(sample)
+        sample = self.track(sample)
+        sample = self.missing(sample)
+        sample = self.flip_rotate(sample)
         return Augment.sort(sample)
 
 
@@ -166,7 +199,7 @@ class SlipMisalign(Misalign):
         return dict(spec)
 
     def __call__(self, sample, **kwargs):
-        return self.flip_rotate(self.misalign(sample, self.imgs))
+        return self.flip_rotate(self.misalign(sample))
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -181,7 +214,7 @@ class SlipMisalign(Misalign):
         assert all(k in spec for k in imgs)
         return imgs
 
-    def misalign(self, sample, imgs):
+    def misalign(self, sample):
         sample = Augment.to_tensor(sample)
 
         for k, v in sample.items():
@@ -193,7 +226,7 @@ class SlipMisalign(Misalign):
             z, y, x = w.shape[-3:]
             zloc = self.zlocs[k]
             w[...] = v[...,:y,:x]
-            if (k in imgs) or (not self.interp):
+            if (k in self.imgs) or (not self.interp):
                 w[:,zloc,...] = v[:,zloc,-y:,-x:]
             sample[k] = w
 
