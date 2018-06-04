@@ -1,9 +1,10 @@
 from __future__ import print_function
 import numpy as np
+import time
 
 from .augment import Augment
 from .flip import FlipRotate
-from .perturb import Blur
+from .perturb import Blur3D
 
 
 __all__ = ['Track']
@@ -14,7 +15,9 @@ class Track(Augment):
                  skip=0, **kwargs):
         self.width = int(width)
         self.margin = int(margin)
-        self.blur = [Blur(sigma[0]), Blur(sigma[1]), Blur(sigma[2])]
+        self.blur = list()
+        for s in sigma:
+            self.blur.append(Blur3D((0,s,s)))
         self.thresh = np.clip(thresh, 0, 1)
         self.skip = np.clip(skip, 0, 1)
         self.do_aug = False
@@ -60,23 +63,22 @@ class Track(Augment):
             a = int(width * loc) - (self.width // 2)
             b = a + self.width
             assert a >= 0 and b < width
-            for z in range(depth):
-                s0 = self.stencil(height)
-                s1 = self.stencil(height)
-                img[...,z,:,a:b] *= (1 - s0)
-                img[...,z,:,a:b] *= (1 - s1)
-                img[...,z,:,a:b] += s1
+            s0 = self.stencil(depth, height)
+            s1 = self.stencil(depth, height)
+            img[...,:,:,a:b] *= (1 - s0)
+            img[...,:,:,a:b] *= (1 - s1)
+            img[...,:,:,a:b] += s1
 
         return sample
 
-    def stencil(self, height):
+    def stencil(self, depth, height):
         # Gradation
-        grad = np.zeros((height, self.width)).astype('float32')
-        grad[:,self.margin:-self.margin] = 1
+        grad = np.zeros((depth, height, self.width)).astype('float32')
+        grad[:,:,self.margin:-self.margin] = 1
         self.blur[0](grad)
 
         # Stencil for track mark
-        stencil = np.random.rand(height, self.width).astype('float32')
+        stencil = np.random.rand(depth, height, self.width).astype('float32')
         self.blur[1](stencil)
         stencil = (stencil > self.thresh).astype(stencil.dtype)
         stencil *= grad
