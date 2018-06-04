@@ -50,7 +50,7 @@ class Track(Augment):
         return imgs
 
     def augment(self, sample, **kwargs):
-        loc = np.random.rand() * 0.75
+        loc = np.random.rand() * 0.5 + 0.25
 
         for k in self.imgs:
             img = sample[k]
@@ -58,7 +58,7 @@ class Track(Augment):
             a = int(width * loc) - (self.width // 2)
             b = a + self.width
             assert a >= 0 and b < width
-            for z in depth:
+            for z in range(depth):
                 s0 = self.stencil(height)
                 s1 = self.stencil(height)
                 img[...,z,:,a:b] *= (1 - s0)
