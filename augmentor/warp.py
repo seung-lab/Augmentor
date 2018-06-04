@@ -15,8 +15,9 @@ class Warp(Augment):
         4. Scale
         5. Perspective stretch
     """
-    def __init__(self, skip=0):
+    def __init__(self, skip=0, **params):
         self.skip = np.clip(skip, 0, 1)
+        self.params = dict(params)
         self.do_warp = False
         self.imgs = []
 
@@ -38,14 +39,19 @@ class Warp(Augment):
         maxsz = tuple(box.size())
 
         # Random warp parameters
-        params = warping.getWarpParams(maxsz, **kwargs)
-        self.size = tuple(x for x in params[0])
+        params = dict(self.params)
+        params.update(kwargs)
+        warp_params = warping.getWarpParams(maxsz, **params)
+        self.size = tuple(x for x in warp_params[0])
         size_diff = tuple(x-y for x,y in zip(self.size, maxsz))
-        self.rot     = params[1]
-        self.shear   = params[2]
-        self.scale   = params[3]
-        self.stretch = params[4]
-        self.twist   = params[5]
+        self.rot     = warp_params[1]
+        self.shear   = warp_params[2]
+        self.scale   = warp_params[3]
+        self.stretch = warp_params[4]
+        self.twist   = warp_params[5]
+
+        # DEBUG
+        # print(warp_params)
 
         # Increase tensor size.
         ret = dict()
