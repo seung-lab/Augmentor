@@ -236,7 +236,7 @@ def getRequiredPatchSize(patch_size, rot, shear, scale, stretch, twist=None):
     return req_size.astype(np.int), eff_size.astype(np.int), left_exc.astype(np.int)
 
 
-def getWarpParams(patch_size, amount=1.0, **kwargs):
+def getWarpParams(patch_size, amount=1.0, do_twist=True, **kwargs):
     """
     To be called from CNNData. Get warping parameters + required warping input patch size.
     """
@@ -249,13 +249,23 @@ def getWarpParams(patch_size, amount=1.0, **kwargs):
     n_dim = len(patch_size)
 
     # Data-specific max.
-    if 'scale_max' in kwargs:
+    if 'rot_max' in kwargs:  # 0.0
+       rot_max = kwargs['rot_max']
+    if 'shear_max' in kwargs:  # 0.0
+       shear_max = kwargs['shear_max']
+    if 'scale_max' in kwargs:  # 1.0
        scale_max = kwargs['scale_max']
+    if 'stretch_max' in kwargs:  # 0.0
+       stretch_max = kwargs['stretch_max']
 
     shear = shear_max * 2 * (np.random.rand() - 0.5)
     if n_dim == 3:
-        twist = rot_max * 2 * (np.random.rand() - 0.5)
-        rot = min(rot_max - abs(twist), rot_max * (np.random.rand()))
+        if do_twist:
+            twist = rot_max * 2 * (np.random.rand() - 0.5)
+            rot = min(rot_max - abs(twist), rot_max * (np.random.rand()))
+        else:
+            twist = 0.0
+            rot = rot_max * np.random.rand()
         scale = 1 - (scale_max - 1) * np.random.rand()
         scale = (scale, scale, 1)
         stretch = stretch_max * 2 * (np.random.rand(4) - 0.5)
@@ -272,7 +282,7 @@ def getWarpParams(patch_size, amount=1.0, **kwargs):
        shear = kwargs['shear']
     if 'scale' in kwargs:  # (1,1,1)
        scale = kwargs['scale']
-    if 'stretch' in kwargs:  # (1,1,1,1)
+    if 'stretch' in kwargs:  # (0,0,0,0)
        stretch = kwargs['stretch']
     if 'twist' in kwargs:  # 0
        twist = kwargs['twist']
