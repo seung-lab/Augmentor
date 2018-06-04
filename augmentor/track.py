@@ -27,7 +27,8 @@ class Track(Augment):
             self.do_aug = False
             return dict(spec)
 
-        spec = self.flip_rotate.prepare(spec, **kwargs)
+        if self.flip_rotate is not None:
+            spec = self.flip_rotate.prepare(spec, **kwargs)
         self.imgs = self._validate(spec, imgs)
         self.do_aug = True
         return dict(spec)
@@ -36,7 +37,8 @@ class Track(Augment):
         sample = Augment.to_tensor(sample)
         if self.do_aug:
             sample = self.augment(sample, **kwargs)
-            sample = self.flip_rotate(sample)
+            if self.flip_rotate is not None:
+                sample = self.flip_rotate(sample)
         return Augment.sort(sample)
 
     def __repr__(self):

@@ -170,6 +170,7 @@ class MisalignTrackMissing(MisalignPlusMissing):
         assert isinstance(track, Track)
         super(MisalignTrackMissing, self).__init__(disp, **kwargs)
         self.track = track
+        self.track.flip_rotate = None
 
     def prepare(self, spec, imgs=[], **kwargs):
         spec = super(MisalignTrackMissing, self).prepare(spec, imgs=imgs, **kwargs)
