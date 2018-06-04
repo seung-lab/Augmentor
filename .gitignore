@@ -7,3 +7,5 @@ augmentor.egg-info/
 *~
 _warping.c
 test/.ipynb_checkpoints/
+*/**/*.h5
+*/**/*.gif
