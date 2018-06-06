@@ -11,7 +11,7 @@ __all__ = ['Track']
 
 
 class Track(Augment):
-    def __init__(self, width=120, margin=20, sigma=(10,10,3), thresh=0.503,
+    def __init__(self, width=120, margin=20, sigma=(15,10,3), thresh=0,
                  skip=0, **kwargs):
         self.width = int(width)
         self.margin = int(margin)
@@ -66,19 +66,23 @@ class Track(Augment):
             s0 = self.stencil(depth, height)
             s1 = self.stencil(depth, height)
             img[...,:,:,a:b] *= (1 - s0)
+            img[...,:,:,a:b] += s0
             img[...,:,:,a:b] *= (1 - s1)
             img[...,:,:,a:b] += s1
 
         return sample
 
     def stencil(self, depth, height):
+        size = (depth, height, self.width)
+
         # Gradation
-        grad = np.zeros((depth, height, self.width)).astype('float32')
+        grad = np.zeros(size).astype('float32')
         grad[:,:,self.margin:-self.margin] = 1
         self.blur[0](grad)
 
         # Stencil for track mark
-        stencil = np.random.rand(depth, height, self.width).astype('float32')
+        # stencil = np.random.rand(depth, height, self.width).astype('float32')
+        stencil = np.random.normal(0, 1, size).astype('float32')
         self.blur[1](stencil)
         stencil = (stencil > self.thresh).astype(stencil.dtype)
         stencil *= grad
