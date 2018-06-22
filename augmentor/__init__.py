@@ -3,6 +3,7 @@ from .blur import *
 from .box import *
 from .flip import *
 from .grayscale import *
+from .label import Label
 from .lost import *
 from .misalign import *
 from .missing import *
