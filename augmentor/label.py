@@ -1,7 +1,12 @@
 from __future__ import print_function
 import numpy as np
 
-import datatools
+try:
+    import datatools
+    dtools = True
+except ImportError:
+    import skimage.measure as measure
+    dtools = False
 
 from .augment import Augment, Compose
 
@@ -21,8 +26,11 @@ class Label(Augment):
         sample = Augment.to_tensor(sample)
         for k in self.segs:
             seg = sample[k][0,:,:,:].astype('uint32')
-            aff = datatools.make_affinity(seg)
-            sample[k] = datatools.get_segmentation(aff)
+            if dtools:
+                aff = datatools.make_affinity(seg)
+                sample[k] = datatools.get_segmentation(aff)
+            else:
+                sample[k] = measure.label(seg)
         return Augment.sort(Augment.to_tensor(sample))
 
     def __repr__(self):
