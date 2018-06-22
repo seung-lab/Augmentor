@@ -28,9 +28,9 @@ class Label(Augment):
             seg = sample[k][0,:,:,:].astype('uint32')
             if dtools:
                 aff = datatools.make_affinity(seg)
-                sample[k] = datatools.get_segmentation(aff)
+                sample[k] = datatools.get_segmentation(aff).astype('uint32')
             else:
-                sample[k] = measure.label(seg)
+                sample[k] = measure.label(seg).astype('uint32')
         return Augment.sort(Augment.to_tensor(sample))
 
     def __repr__(self):
