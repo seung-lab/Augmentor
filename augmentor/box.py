@@ -15,27 +15,30 @@ class BoxOcclusion(Augment):
     Box occlusion.
 
     Args:
-        perturb (``Perturb``): ``Perturb`` class.
+        perturb_cls (``Perturb``): ``Perturb`` class.
         dims (2-tpule): min/max dimension of box.
         aniso (int): anisotropy factor.
         density (float):
         margin (3-tuple, optional):
         skip (float, optional): skip probability.
     """
-    def __init__(self, perturb, dims=(10,30), aniso=10, density=0.5,
-                 margin=(0,0,0), skip=0, **params):
-        assert issubclass(perturb, Perturb)
-        self.perturb = perturb
+    def __init__(self, perturb_cls, dims=(10,30), aniso=10, density=0.5,
+                 margin=(0,0,0), individual=True, skip=0, **params):
+        assert issubclass(perturb_cls, Perturb)
+        self.perturb_cls = perturb_cls
         self.dims = dims
         self.aniso = aniso
         self.density = np.clip(density, 0, 1)
         self.margin = margin
+        self.individual = individual
         self.skip = np.clip(skip, 0, 1)
         self.params = params
         self.do_aug = False
+        self.perturb = None
 
     def prepare(self, spec, imgs=[], **kwargs):
         self.do_aug = np.random.rand() > self.skip
+        self.perturb = self.get_perturb() if self.do_aug else None
         self.spec = dict(spec)
         self.imgs = self._validate(spec, imgs)
         return dict(spec)
@@ -58,7 +61,7 @@ class BoxOcclusion(Augment):
         return imgs
 
     def get_perturb(self):
-        return self.perturb(**self.params)
+        return self.perturb_cls(**self.params)
 
     def augment(self, sample, **kwargs):
         # Find union of bounding boxes.
@@ -95,8 +98,10 @@ class BoxOcclusion(Augment):
             # Random box
             box = centered_box(loc, dim)
 
-            # Perturb
-            perturb = self.get_perturb()
+            # Perturb each individual box independently.
+            if self.individual:
+                self.perturb = self.get_perturb()
+
             for k in self.imgs:
                 bbox = self.bbox[k]
                 box2 = bbox.intersect(box)
@@ -108,7 +113,8 @@ class BoxOcclusion(Augment):
                 s0 = slice(vmin[0],vmax[0])
                 s1 = slice(vmin[1],vmax[1])
                 s2 = slice(vmin[2],vmax[2])
-                perturb(sample[k][...,s0,s1,s2])
+                assert self.perturb is not None
+                self.perturb(sample[k][...,s0,s1,s2])
 
             # Stop condition
             count += box.volume()
