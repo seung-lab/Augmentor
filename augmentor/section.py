@@ -9,21 +9,22 @@ class Section(Augment):
     """Perturb random sections in a training sample.
 
     Args:
-        perturb (``Perturb``): ``Perturb`` class.
+        perturb_cls (``Perturb``): ``Perturb`` class.
         maxsec (int):
         prob (float, optional):
         skip (float, optional): skip probability.
         double (bool, optional): double section.
     """
-    def __init__(self, perturb, maxsec=0, prob=None, skip=0, double=False,
-                 **params):
-        assert issubclass(perturb, Perturb)
-        self.perturb = perturb
+    def __init__(self, perturb_cls, maxsec=0, prob=None, skip=0, double=False,
+                 individual=True, **params):
+        assert issubclass(perturb_cls, Perturb)
+        self.perturb_cls = perturb_cls
         assert (maxsec > 0) or (prob is not None)
         self.maxsec = max(maxsec, 0)
         self.prob = np.clip(prob, 0, 1) if prob is not None else prob
         self.skip = np.clip(skip, 0, 1)
         self.margin = int(double)
+        self.individual = individual
         self.params = params
         self.zlocs = []
         self.imgs = []
@@ -33,6 +34,9 @@ class Section(Augment):
         if np.random.rand() < self.skip:
             self.zlocs = []
             return dict(spec)
+
+        # Perturbation
+        self.perturb = self.get_perturb()
 
         # Random sections
         zdim = self._validate(spec, imgs) - self.margin
@@ -51,14 +55,15 @@ class Section(Augment):
         for z in self.zlocs:
             if self.margin > 0:
                 z = slice(z, z + self.margin + 1)
-            perturb = self.get_perturb()
+            if self.individual:
+                self.perturb = self.get_perturb()
             for k in self.imgs:
-                perturb(sample[k][...,z,:,:])
+                self.perturb(sample[k][...,z,:,:])
         return Augment.sort(sample)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
-        format_string += 'perturb={}, '.format(self.perturb)
+        format_string += 'perturb_cls={}, '.format(self.perturb_cls)
         if self.prob is None:
             format_string += 'maxsec={}, '.format(self.maxsec)
         else:
@@ -70,7 +75,7 @@ class Section(Augment):
         return format_string
 
     def get_perturb(self):
-        return self.perturb(**self.params)
+        return self.perturb_cls(**self.params)
 
     def _validate(self, spec, imgs):
         assert len(imgs) > 0
