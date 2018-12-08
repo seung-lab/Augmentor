@@ -66,6 +66,9 @@ class Warp(Augment):
         sample = Augment.to_tensor(sample)
         if self.do_warp:
             for k, v in sample.items():
+                if not isinstance(v, np.ndarray):
+                    continue
+                    
                 v = np.transpose(v, (1,0,2,3))
                 if k in self.imgs:
                     v = warping.warp3d(v, self.spec[k][-3:],

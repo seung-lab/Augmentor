@@ -53,6 +53,8 @@ class LostSection(Augment):
         if len(self.zloc) > 0:
             nsec = self.nsec
             for k, v in sample.items():
+                if not isinstance(v, np.ndarray):
+                    continue
                 zloc = self.zloc[k]
                 c, z, y, x = v.shape[-4:]
                 w = np.zeros((c, z - nsec, y, x), dtype=v.dtype)
@@ -100,6 +102,9 @@ class LostPlusMissing(LostSection):
             assert self.nsec == 2
             nsec = self.nsec
             for k, v in sample.items():
+                if not isinstance(v, np.ndarray):
+                    continue
+                    
                 zloc = self.zloc[k]
 
                 # New tensor

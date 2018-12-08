@@ -75,6 +75,9 @@ class Misalign(Augment):
         sample = Augment.to_tensor(sample)
 
         for k, v in sample.items():
+            if not isinstance(v, np.ndarray):
+                continue
+
             # New tensor
             w = np.zeros(self.spec[k], dtype=v.dtype)
             w = utils.to_tensor(w)
@@ -121,6 +124,9 @@ class MisalignPlusMissing(Misalign):
 
     def misalign(self, sample):
         for k, v in sample.items():
+            if not isinstance(v, np.ndarray):
+                continue
+
             # New tensor
             w = np.zeros(self.spec[k], dtype=v.dtype)
             w = utils.to_tensor(w)
@@ -219,6 +225,9 @@ class SlipMisalign(Misalign):
         sample = Augment.to_tensor(sample)
 
         for k, v in sample.items():
+            if not isinstance(v, np.ndarray):
+                continue
+                
             # New tensor
             w = np.zeros(self.spec[k], dtype=v.dtype)
             w = utils.to_tensor(w)

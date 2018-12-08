@@ -1,12 +1,7 @@
 from __future__ import print_function
 import numpy as np
 
-try:
-    import datatools
-    dtools = True
-except ImportError:
-    import skimage.measure as measure
-    dtools = False
+import skimage.measure as measure
 
 from .augment import Augment, Compose
 
@@ -15,8 +10,9 @@ class Label(Augment):
     """
     Recompute connected components.
     """
-    def __init__(self):
+    def __init__(self, split_map=False):
         self.segs = []
+        self.split_map = split_map
 
     def prepare(self, spec, segs=[], **kwargs):
         self.segs = self._validate(spec, segs)
@@ -25,13 +21,25 @@ class Label(Augment):
     def __call__(self, sample, **kwargs):
         sample = Augment.to_tensor(sample)
         for k in self.segs:
-            seg = sample[k][0,:,:,:].astype('uint32')
-            if dtools:
-                aff = datatools.make_affinity(seg)
-                sample[k] = datatools.get_segmentation(aff).astype('uint32')
-            else:
-                sample[k] = measure.label(seg).astype('uint32')
+            seg = sample[k][0,:,:,:].astype(np.uint32)
+            split = measure.label(seg).astype(np.uint32)
+            sample[k] = split.astype(np.uint32)
+            if self.split_map:
+                groups = self.create_mapping(seg, split)
+                sample[k + '_groups'] = groups
         return Augment.sort(Augment.to_tensor(sample))
+
+    def create_mapping(self, seg, split):
+        seg = seg.astype(np.uint64)
+        split = split.astype(np.uint64)
+        x = 2**32 * seg + split
+        unq = np.unique(x)
+        mapping = {}
+        for u in unq:
+            a, b = np.uint64(u // 2**32), np.uint64(u % 2**32)
+            mapping[a] = mapping.get(a, []) + [b]
+        groups = list(mapping.values())
+        return groups
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '()'
