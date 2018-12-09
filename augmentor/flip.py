@@ -28,8 +28,6 @@ class Flip(Augment):
         sample = Augment.to_tensor(sample)
         if self.do_aug:
             for k, v in sample.items():
-                if not isinstance(v, np.ndarray):
-                    continue
                 # Prevent potential negative stride issues by copying.
                 sample[k] = np.copy(np.flip(v, self.axis))
         return Augment.sort(sample)
@@ -71,8 +69,6 @@ class Transpose(Augment):
         sample = Augment.to_tensor(sample)
         if self.do_aug:
             for k, v in sample.items():
-                if not isinstance(v, np.ndarray):
-                    continue
                 # Prevent potential negative stride issues by copying.
                 sample[k] = np.copy(np.transpose(v, self.axes))
         return Augment.sort(sample)
