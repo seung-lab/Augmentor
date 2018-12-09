@@ -87,13 +87,13 @@ class Blend(Augment):
     def prepare(self, spec, **kwargs):
         """Choose an augment and prepare it."""
         self.aug = self._choose()
+        if self.aug is None:
+            return dict(spec)
         return self.aug.prepare(spec, **kwargs)
 
     def __call__(self, sample, **kwargs):
-        # Lazy prep.
         if self.aug is None:
-            spec = Augment.get_spec(sample)
-            self.prepare(spec)
+            return sample
         return self.aug(sample, **kwargs)
 
     def __repr__(self):
