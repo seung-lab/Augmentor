@@ -114,7 +114,7 @@ class PartialSection(Section):
 
         rx, ry = np.random.rand(2)
         quad = np.random.rand(4) > 0.5
-        perturb = [self.perturb(**self.params) for _ in range(4)]
+        perturb = [self.perturb_cls(**self.params) for _ in range(4)]
         return _PerturbQuadrant(perturb, rx, ry, quad)
 
 
