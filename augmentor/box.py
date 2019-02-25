@@ -92,7 +92,7 @@ class BoxOcclusion(Augment):
 
             # Random box size
             dim = np.random.randint(self.dims[0], self.dims[1] + 1, 3)
-            dim[0] //= int(self.aniso)
+            dim[0] = int(round(dim[0]/self.aniso))
             dim[0] = max(dim[0], 1)
 
             # Random box
