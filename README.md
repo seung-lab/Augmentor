@@ -1,2 +1,2 @@
 # Augmentor
-Data augmentation toolbox for training 3D convolutional nets.
+Data augmentation toolbox for training 3D convolutional nets
