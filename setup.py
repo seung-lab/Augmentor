@@ -23,7 +23,7 @@ setup(
     version='0.0.1',
     author='Kisuk Lee',
     author_email='kisuklee@mit.edu',
-    url='https://github.com/torms3/Augmentor',
+    url='https://github.com/seung-lab/Augmentor',
     description='Data augmentation for 3D deep learning',
 
     # Package info
