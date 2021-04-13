@@ -5,7 +5,6 @@ from setuptools import setup, Extension, find_packages
 requirements = [
     'numpy',
     'scipy',
-    'Cython',
 ]
 
 
