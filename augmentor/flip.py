@@ -90,3 +90,16 @@ class FlipRotate(Compose):
             Transpose(axes=[0,1,3,2])
         ]
         super(FlipRotate, self).__init__(augs)
+
+
+class FlipRotateIsotropic(Compose):
+    def __init__(self):
+        augs = [
+            Flip(axis=-1),
+            Flip(axis=-2),
+            Flip(axis=-3),
+            Transpose(axes=[0,1,3,2]), # xy
+            Transpose(axes=[0,2,1,3]), # yz
+            Transpose(axes=[0,3,2,1])  # zx
+        ]
+        super(FlipRotateIsotropic, self).__init__(augs)
