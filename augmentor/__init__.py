@@ -7,5 +7,6 @@ from .label import Label
 from .lost import *
 from .misalign import *
 from .missing import *
+from .noise import *
 from .track import *
 from .warp import Warp
