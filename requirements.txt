@@ -1,4 +1,5 @@
 Cython
+imgaug
 matplotlib
 numpy
 scipy
